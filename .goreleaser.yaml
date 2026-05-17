@@ -1,0 +1,128 @@
+version: 2
+
+project_name: phlx
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: phalanx
+    main: ./cmd/phalanx
+    binary: phalanx
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}}
+    goos: [linux, darwin, windows]
+    goarch: [amd64, arm64]
+    ignore:
+      - goos: windows
+        goarch: arm64
+
+  - id: phalanx-npm-hook
+    main: ./cmd/phalanx-npm-hook
+    binary: phalanx-npm-hook
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w
+    goos: [linux, darwin, windows]
+    goarch: [amd64, arm64]
+    ignore:
+      - goos: windows
+        goarch: arm64
+
+  - id: phalanx-pip-hook
+    main: ./cmd/phalanx-pip-hook
+    binary: phalanx-pip-hook
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w
+    goos: [linux, darwin, windows]
+    goarch: [amd64, arm64]
+    ignore:
+      - goos: windows
+        goarch: arm64
+
+archives:
+  - id: phlx
+    ids:
+      - phalanx
+      - phalanx-npm-hook
+      - phalanx-pip-hook
+    name_template: >-
+      phlx_{{ .Version }}_
+      {{- if eq .Os "darwin" }}macos
+      {{- else }}{{ .Os }}{{ end }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else }}{{ .Arch }}{{ end }}
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    formats: [tar.gz]
+    files:
+      - README.md
+      - LICENSE
+
+checksum:
+  name_template: 'checksums.txt'
+  algorithm: sha256
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  sort: asc
+  use: github
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^chore:'
+      - 'merge conflict'
+      - Merge pull request
+      - Merge remote-tracking branch
+      - Merge branch
+  groups:
+    - title: Features
+      regexp: '^.*?feat(\([[:word:]]+\))??!?:.+$'
+      order: 0
+    - title: Bug fixes
+      regexp: '^.*?fix(\([[:word:]]+\))??!?:.+$'
+      order: 1
+    - title: Other
+      order: 999
+
+release:
+  github:
+    owner: satnambhatt
+    name: phlx
+  draft: false
+  prerelease: auto
+  name_template: "v{{ .Version }}"
+  header: |
+    ## Phalanx {{ .Tag }}
+
+    Local cyber shield for npm/pip installs. Single static Go binary.
+
+    ### Install
+
+    Download archive for your platform below, extract, drop three binaries on `$PATH`, run `phalanx hooks install`.
+
+    ```bash
+    # macOS arm64 example
+    curl -sSL https://github.com/satnambhatt/phlx/releases/download/{{ .Tag }}/phlx_{{ .Version }}_macos_arm64.tar.gz | tar -xz
+    sudo mv phalanx phalanx-npm-hook phalanx-pip-hook /usr/local/bin/
+    phalanx hooks install
+    source ~/.zshrc
+    ```
+  footer: |
+    **Full Changelog**: https://github.com/satnambhatt/phlx/compare/{{ .PreviousTag }}...{{ .Tag }}
