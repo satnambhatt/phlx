@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Phalanx — How It Works</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --white:#ffffff; --bg:#f8f9fb; --bg2:#f0f2f5; --border:#dde1e8; --border2:#c8cdd8;
+  --text:#1a1d23; --text2:#3a3f4a; --text3:#6b7280; --text4:#9ca3af;
+  --blue:#1d4ed8; --blue-bg:#eff6ff; --blue-bdr:#bfdbfe;
+  --green:#15803d; --green-bg:#f0fdf4; --green-bdr:#bbf7d0;
+  --red:#b91c1c; --red-bg:#fef2f2; --red-bdr:#fecaca;
+  --amber:#b45309; --amber-bg:#fffbeb; --amber-bdr:#fde68a;
+  --terminal:#0f1117; --term-green:#4ade80; --term-dim:#6b7280;
+  --term-yellow:#fbbf24; --term-red:#f87171; --term-white:#e5e7eb;
+}
+html { scroll-behavior:smooth; }
+body { background:var(--white); color:var(--text); font-family:'DM Sans',sans-serif; font-size:15px; line-height:1.7; }
+.page { max-width:1100px; margin:0 auto; padding:0 40px; }
+
+/* MASTHEAD */
+.masthead { background:var(--white); border-bottom:2px solid var(--text); padding:28px 40px 22px; display:grid; grid-template-columns:1fr auto 1fr; align-items:end; gap:20px; }
+.mh-left,.mh-right { font-size:11px; color:var(--text3); letter-spacing:.3px; line-height:2; font-family:'DM Mono',monospace; }
+.mh-right { text-align:right; }
+.mh-center { text-align:center; }
+.wordmark { font-family:'Playfair Display',serif; font-size:52px; font-weight:900; color:var(--text); letter-spacing:-2px; line-height:1; }
+.wordmark-rule { height:2px; background:var(--text); margin:8px 0 6px; }
+.wordmark-sub { font-size:11px; letter-spacing:3px; text-transform:uppercase; color:var(--text3); }
+
+/* HERO */
+.hero { background:var(--white); display:grid; grid-template-columns:1fr 1px 1fr; border-bottom:1px solid var(--border); }
+.hero-col { padding:48px 40px; }
+.hero-sep { background:var(--border); }
+.hero-label { font-size:11px; letter-spacing:2px; text-transform:uppercase; color:var(--text4); margin-bottom:16px; font-family:'DM Mono',monospace; }
+.hero-h1 { font-family:'Playfair Display',serif; font-size:40px; font-weight:900; line-height:1.1; letter-spacing:-1px; color:var(--text); margin-bottom:20px; }
+.hero-h1 em { font-style:italic; color:var(--red); }
+.hero-body { font-size:15px; color:var(--text2); line-height:1.8; }
+.hero-body + .hero-body { margin-top:12px; }
+.pull-quote { background:var(--bg2); border-left:4px solid var(--blue); padding:20px 24px; margin-bottom:24px; }
+.pull-quote blockquote { font-family:'Playfair Display',serif; font-size:20px; font-style:italic; line-height:1.5; color:var(--text); margin-bottom:10px; }
+.pull-quote cite { font-size:11px; letter-spacing:1px; text-transform:uppercase; color:var(--text3); font-style:normal; font-family:'DM Mono',monospace; }
+.badge-row { display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
+.badge { font-family:'DM Mono',monospace; font-size:11px; padding:4px 10px; border:1px solid var(--border2); color:var(--text2); background:var(--white); }
+.badge.solid { background:var(--text); color:var(--white); border-color:var(--text); }
+.badge.green { background:var(--green-bg); color:var(--green); border-color:var(--green-bdr); }
+.badge.blue  { background:var(--blue-bg);  color:var(--blue);  border-color:var(--blue-bdr); }
+
+/* SECTIONS */
+.section { padding:64px 0; border-bottom:1px solid var(--border); }
+.section:last-child { border-bottom:none; }
+.sec-hdr { display:flex; align-items:baseline; gap:16px; margin-bottom:44px; }
+.sec-num { font-family:'Playfair Display',serif; font-size:64px; font-weight:900; color:var(--border2); line-height:1; letter-spacing:-3px; flex-shrink:0; }
+.sec-title { font-family:'Playfair Display',serif; font-size:32px; font-weight:700; color:var(--text); letter-spacing:-.5px; }
+.sec-title span { color:var(--blue); font-style:italic; }
+.sec-rule { flex:1; height:1px; background:var(--border); }
+
+/* TERMINAL */
+.terminal { background:var(--terminal); border-radius:8px; overflow:hidden; box-shadow:0 4px 24px rgba(0,0,0,.15); }
+.terminal-titlebar { background:#1e2130; padding:12px 16px; display:flex; align-items:center; gap:8px; }
+.tb-dot { width:12px; height:12px; border-radius:50%; }
+.tb-dot.r{background:#ff5f57;} .tb-dot.y{background:#febc2e;} .tb-dot.g{background:#28c840;}
+.tb-label { margin-left:8px; font-family:'DM Mono',monospace; font-size:11px; color:#6b7280; }
+.terminal-body { padding:24px 28px; font-family:'DM Mono',monospace; font-size:13px; line-height:2; }
+.t-prompt{color:#6b7280;} .t-cmd{color:var(--term-white);} .t-green{color:var(--term-green);}
+.t-red{color:var(--term-red);} .t-yellow{color:var(--term-yellow);} .t-dim{color:var(--term-dim);}
+.t-cursor { display:inline-block; width:8px; height:15px; background:var(--term-green); vertical-align:middle; animation:blink 1s step-end infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+.type-line { display:block; overflow:hidden; white-space:nowrap; animation:typeIn .35s steps(50) both; }
+.t-line-1{animation-delay:.3s;} .t-line-2{animation-delay:.9s;} .t-line-3{animation-delay:1.5s;}
+.t-line-4{animation-delay:2s;} .t-line-5{animation-delay:2.4s;} .t-line-6{animation-delay:2.8s;}
+.t-line-7{animation-delay:3.2s;} .t-line-8{animation-delay:3.5s;} .t-line-9{animation-delay:3.8s;}
+@keyframes typeIn { from{width:0} to{width:100%} }
+
+/* STEPS */
+.steps { display:flex; flex-direction:column; }
+.step { display:grid; grid-template-columns:48px 1fr; gap:16px; padding:20px 0; border-bottom:1px solid var(--border); align-items:start; }
+.step:last-child { border-bottom:none; }
+.step-num { font-family:'Playfair Display',serif; font-size:32px; font-weight:900; color:var(--border2); line-height:1; text-align:right; }
+.step-title { font-size:15px; font-weight:600; color:var(--text); margin-bottom:4px; }
+.step-body { font-size:13px; color:var(--text2); line-height:1.7; }
+.step-body code { font-family:'DM Mono',monospace; font-size:12px; background:var(--bg2); border:1px solid var(--border); padding:1px 5px; color:var(--text); }
+
+/* CALLOUT */
+.callout { border:1px solid var(--border); background:var(--white); padding:20px 24px; margin:20px 0; position:relative; }
+.callout-tag { position:absolute; top:-10px; left:14px; background:var(--white); padding:0 8px; font-family:'DM Mono',monospace; font-size:10px; letter-spacing:1.5px; text-transform:uppercase; color:var(--text3); border:1px solid var(--border); }
+.callout.blue  { border-color:var(--blue-bdr);  background:var(--blue-bg);  }
+.callout.green { border-color:var(--green-bdr); background:var(--green-bg); }
+.callout.red   { border-color:var(--red-bdr);   background:var(--red-bg);   }
+.callout.amber { border-color:var(--amber-bdr); background:var(--amber-bg); }
+.callout.blue  .callout-tag { color:var(--blue);  border-color:var(--blue-bdr);  background:var(--blue-bg);  }
+.callout.green .callout-tag { color:var(--green); border-color:var(--green-bdr); background:var(--green-bg); }
+.callout.red   .callout-tag { color:var(--red);   border-color:var(--red-bdr);   background:var(--red-bg);   }
+.callout.amber .callout-tag { color:var(--amber); border-color:var(--amber-bdr); background:var(--amber-bg); }
+.callout-title { font-size:15px; font-weight:600; color:var(--text); margin-bottom:6px; }
+.callout-body  { font-size:13px; color:var(--text2); line-height:1.7; }
+.callout-body code { font-family:'DM Mono',monospace; font-size:11px; background:rgba(0,0,0,.06); padding:1px 5px; }
+
+/* PIPELINE */
+.pipeline { display:grid; grid-template-columns:repeat(5,1fr); border:1px solid var(--border); overflow:hidden; background:var(--border); gap:1px; margin:24px 0 2px; }
+.pipe-step { background:var(--white); padding:18px 16px; }
+.pipe-step.dark { background:var(--text); color:var(--white); }
+.ps-tag { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:1.5px; text-transform:uppercase; color:var(--text4); margin-bottom:8px; }
+.pipe-step.dark .ps-tag { color:rgba(255,255,255,.4); }
+.ps-name { font-size:13px; font-weight:600; color:var(--text); margin-bottom:4px; }
+.pipe-step.dark .ps-name { color:var(--white); }
+.ps-sub  { font-family:'DM Mono',monospace; font-size:10px; color:var(--text3); line-height:1.6; }
+.pipe-step.dark .ps-sub { color:rgba(255,255,255,.45); }
+.pipeline-outcomes { display:grid; grid-template-columns:4fr 1fr; border:1px solid var(--border); border-top:none; background:var(--border); gap:1px; margin-bottom:16px; }
+.outcome { background:var(--white); padding:16px 18px; }
+.outcome.green-out { background:var(--green-bg); }
+.outcome.red-out   { background:var(--red-bg); }
+.outcome-tag { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:1.5px; text-transform:uppercase; margin-bottom:6px; }
+.green-out .outcome-tag { color:var(--green); }
+.red-out   .outcome-tag { color:var(--red); }
+.outcome-name { font-size:13px; font-weight:600; color:var(--text); margin-bottom:3px; }
+.outcome-sub  { font-family:'DM Mono',monospace; font-size:10px; color:var(--text3); line-height:1.6; }
+
+/* ARCH */
+.arch-grid { display:grid; grid-template-columns:1fr 40px 1fr; gap:1px; background:var(--border); border:1px solid var(--border); margin:20px 0; font-family:'DM Mono',monospace; }
+.arch-cell { background:var(--white); padding:16px; }
+.arch-cell.dark      { background:var(--text); color:var(--white); }
+.arch-cell.green-bg  { background:var(--green-bg); }
+.arch-cell.red-bg    { background:var(--red-bg); }
+.arch-cell.gray-bg   { background:var(--bg2); }
+.arch-cell.arrow     { background:var(--bg2); display:flex; align-items:center; justify-content:center; font-size:20px; color:var(--text3); }
+.arch-label { font-size:9px; letter-spacing:1.5px; text-transform:uppercase; color:var(--text4); margin-bottom:6px; }
+.arch-cell.dark .arch-label { color:rgba(255,255,255,.4); }
+.arch-name { font-size:13px; font-weight:700; color:var(--text); margin-bottom:3px; }
+.arch-cell.dark .arch-name     { color:var(--white); }
+.arch-cell.green-bg .arch-name { color:var(--green); }
+.arch-cell.red-bg   .arch-name { color:var(--red); }
+.arch-detail { font-size:10px; color:var(--text3); line-height:1.6; }
+.arch-cell.dark .arch-detail { color:rgba(255,255,255,.45); }
+.arch-badge { display:inline-block; font-size:9px; letter-spacing:1px; text-transform:uppercase; padding:2px 7px; border:1px solid currentColor; margin-top:8px; }
+
+/* LAYOUT */
+.two-col   { display:grid; grid-template-columns:1fr 1fr; gap:48px; align-items:start; }
+.three-col { display:grid; grid-template-columns:1fr 1fr 1fr; gap:24px; align-items:start; }
+
+/* WHY CARDS */
+.why-card { background:var(--white); border:1px solid var(--border); padding:24px; transition:border-color .15s,box-shadow .15s; }
+.why-card:hover { border-color:var(--blue-bdr); box-shadow:0 2px 12px rgba(29,78,216,.08); }
+.why-icon  { font-size:26px; display:block; margin-bottom:12px; }
+.why-title { font-size:15px; font-weight:600; color:var(--text);  margin-bottom:8px; }
+.why-body  { font-size:13px; color:var(--text2); line-height:1.7; }
+.why-body code { font-family:'DM Mono',monospace; font-size:11px; background:var(--bg2); padding:1px 4px; }
+
+/* TABLE */
+.comparison { border:1px solid var(--border); overflow:hidden; margin:32px 0; }
+.comp-table { width:100%; border-collapse:collapse; font-size:13px; }
+.comp-table thead tr { background:var(--text); }
+.comp-table th { padding:13px 16px; text-align:left; font-family:'DM Mono',monospace; font-size:10px; font-weight:500; letter-spacing:1.5px; text-transform:uppercase; color:rgba(255,255,255,.8); }
+.comp-table th.phalanx { background:var(--blue); color:white; }
+.comp-table td { padding:11px 16px; border-bottom:1px solid var(--border); color:var(--text2); vertical-align:top; line-height:1.5; }
+.comp-table tr:last-child td { border-bottom:none; }
+.comp-table tr:hover td { background:var(--bg); }
+.comp-table td:first-child { font-weight:500; color:var(--text); }
+.comp-table td.phalanx { background:var(--blue-bg); font-weight:500; color:var(--text); }
+.tick{color:var(--green);font-weight:700;} .cross{color:var(--red);} .part{color:var(--amber);}
+
+/* TIMELINE */
+.timeline-grid { display:grid; grid-template-columns:repeat(6,1fr); gap:4px; margin:32px 0; }
+.tl-cell { background:var(--white); border:1px solid var(--border); padding:16px 14px; }
+.tl-cell.highlight { border-color:var(--green); border-width:2px; background:var(--green-bg); }
+.tl-cell.danger    { border-color:var(--red-bdr); background:var(--red-bg); }
+.tl-stage { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:1px; text-transform:uppercase; margin-bottom:8px; }
+.tl-cell.highlight .tl-stage { color:var(--green); }
+.tl-cell.danger    .tl-stage { color:var(--red); }
+.tl-cell:not(.highlight):not(.danger) .tl-stage { color:var(--text4); }
+.tl-name { font-size:13px; font-weight:600; color:var(--text); margin-bottom:4px; }
+.tl-cell.danger .tl-name { color:var(--red); }
+.tl-sub  { font-size:10px; color:var(--text3); line-height:1.5; margin-bottom:8px; }
+.tl-tool { font-size:10px; font-weight:600; }
+.tl-cell.highlight .tl-tool { color:var(--green); }
+.tl-cell.danger    .tl-tool { color:var(--red); }
+.tl-cell:not(.highlight):not(.danger) .tl-tool { color:var(--amber); }
+
+/* QUICK START */
+.qs-steps { display:flex; flex-direction:column; }
+.qs-step { display:grid; grid-template-columns:40px 1fr; gap:16px; align-items:start; padding:18px 0; border-bottom:1px solid var(--border); }
+.qs-step:last-child { border-bottom:none; }
+.qs-num { width:36px; height:36px; background:var(--blue); color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:700; flex-shrink:0; }
+.qs-title { font-size:15px; font-weight:600; color:var(--text); margin-bottom:4px; }
+.qs-body  { font-size:13px; color:var(--text2); line-height:1.7; }
+.qs-body code { font-family:'DM Mono',monospace; font-size:12px; background:var(--bg2); border:1px solid var(--border); padding:1px 6px; color:var(--text); }
+
+/* FOOTER */
+.footer { background:var(--white); border-top:2px solid var(--text); padding:24px 40px; display:flex; justify-content:space-between; align-items:center; font-family:'DM Mono',monospace; font-size:11px; color:var(--text3); }
+
+/* ANIMATE */
+.fade-in { opacity:0; transform:translateY(14px); transition:opacity .5s ease,transform .5s ease; }
+.fade-in.visible { opacity:1; transform:translateY(0); }
+
+@media(max-width:860px){
+  .masthead,.hero{grid-template-columns:1fr;} .mh-left,.mh-right,.hero-sep{display:none;}
+  .two-col,.three-col{grid-template-columns:1fr;gap:24px;} .pipeline{grid-template-columns:1fr;}
+  .timeline-grid{grid-template-columns:1fr 1fr;} .page,.masthead,.footer{padding-left:20px;padding-right:20px;}
+}
+</style>
+</head>
+<body>
+
+<div class="masthead">
+  <div class="mh-left">Open Source · MIT Licence<br>Single Go binary · pure-Go SQLite<br>github.com/satnambhatt/phlx</div>
+  <div class="mh-center">
+    <div class="wordmark">Phalanx</div>
+    <div class="wordmark-rule"></div>
+    <div class="wordmark-sub">Package Security That Holds The Line</div>
+  </div>
+  <div class="mh-right">npm · pip · PyPI<br>macOS · Linux · WSL<br>arm64 · amd64</div>
+</div>
+
+<div class="hero">
+  <div class="hero-col">
+    <div class="hero-label">The Problem</div>
+    <h1 class="hero-h1">Vulnerabilities arrive<br>the moment you<br><em>press Enter.</em></h1>
+    <p class="hero-body">Every <code style="font-family:'DM Mono',monospace;font-size:13px;background:#f0f2f5;border:1px solid #dde1e8;padding:1px 5px">npm install</code> is a trust decision made in milliseconds. Packages land in <code style="font-family:'DM Mono',monospace;font-size:13px;background:#f0f2f5;border:1px solid #dde1e8;padding:1px 5px">node_modules</code> before any tool can warn you.</p>
+    <p class="hero-body" style="margin-top:12px">Post-install scanners find problems after the fact. CI gates catch them before production. But nothing stands at the moment of install — until Phalanx.</p>
+  </div>
+  <div class="hero-sep"></div>
+  <div class="hero-col">
+    <div class="hero-label">The Solution</div>
+    <div class="pull-quote">
+      <blockquote>"Phalanx sits between the developer and the package manager. Every install is scanned before a single byte lands in your project."</blockquote>
+      <cite>Zero config · Zero cloud · Zero behaviour change</cite>
+    </div>
+    <div class="badge-row">
+      <span class="badge solid">npm</span><span class="badge solid">pip</span>
+      <span class="badge green">Trivy scanner</span><span class="badge green">Behavioural rules</span>
+      <span class="badge blue">SQLite cache</span><span class="badge">0 MB idle</span>
+    </div>
+  </div>
+</div>
+
+<div class="page">
+
+<div class="section fade-in">
+  <div class="sec-hdr"><div class="sec-num">01</div><h2 class="sec-title">How It <span>Works</span></h2><div class="sec-rule"></div></div>
+  <div class="two-col">
+    <div>
+      <p style="color:var(--text2);margin-bottom:24px;line-height:1.8">Phalanx installs shim scripts at <code style="font-family:'DM Mono',monospace;font-size:12px;background:var(--bg2);border:1px solid var(--border);padding:1px 5px">~/.phalanx/bin/{npm,pip,pip3}</code> and prepends that directory to your <code style="font-family:'DM Mono',monospace;font-size:12px;background:var(--bg2);border:1px solid var(--border);padding:1px 5px">$PATH</code>. Each shim invokes a small Go binary that scans, then either blocks or execs the real package manager.</p>
+      <div class="steps">
+        <div class="step"><div class="step-num">1</div><div class="step-content"><div class="step-title">Shell finds the shim</div><div class="step-body">You type <code>npm install lodash</code>. Your shell searches <code>$PATH</code> left to right and finds <code>~/.phalanx/bin/npm</code> before the real npm. Phalanx intercepts.</div></div></div>
+        <div class="step"><div class="step-num">2</div><div class="step-content"><div class="step-title">Typosquat check + version resolve</div><div class="step-body">Stage 1 runs known-squat list, Levenshtein, homoglyph and separator-confusion analysers — a CRITICAL hit blocks before any download. Otherwise <code>phalanx-npm-hook</code> queries the npm or PyPI registry to pin <code>^4</code> → <code>4.17.21</code>.</div></div></div>
+        <div class="step"><div class="step-num">3</div><div class="step-content"><div class="step-title">Trivy + behavioural in parallel</div><div class="step-body">Tarball downloaded into a temp workspace. Stage 3 (Trivy CVE + licence scan) and Stage 4 (14 behavioural static-analysis rules on extracted tarball) run as goroutines. Results cached 24h in SQLite.</div></div></div>
+        <div class="step"><div class="step-num">4</div><div class="step-content"><div class="step-title">Policy gate decides</div><div class="step-body">Inline policy evaluates findings. CRITICAL CVEs and unfixed HIGH CVEs block. Fixable issues warn. GPL / AGPL licences block. Optional: externalise to OPA / Rego (see <code>docs/upgrades</code>).</div></div></div>
+        <div class="step"><div class="step-num">5</div><div class="step-content"><div class="step-title">Real package manager runs or doesn't</div><div class="step-body">If blocked: <code>exit 1</code>, nothing installs. If clean: Phalanx execs the real npm/pip binary with all original arguments unchanged.</div></div></div>
+      </div>
+    </div>
+    <div>
+      <div class="terminal">
+        <div class="terminal-titlebar"><div class="tb-dot r"></div><div class="tb-dot y"></div><div class="tb-dot g"></div><span class="tb-label">~/myproject — npm install</span></div>
+        <div class="terminal-body">
+          <span class="type-line t-line-1"><span class="t-prompt">$ </span><span class="t-cmd">npm install lodash express bad-lib</span></span>
+          <span class="type-line t-line-2"><span class="t-dim">  phalanx  scanning 3 packages...</span></span><br>
+          <span class="type-line t-line-3"><span class="t-green">  ✓  lodash@4.17.21 — clean</span></span>
+          <span class="type-line t-line-4"><span class="t-yellow">  ⚠  express@4.18.3 — 1 advisory</span></span>
+          <span class="type-line t-line-5"><span class="t-dim">     HIGH CVE-2024-43796 fixable → upgrade to 4.18.4</span></span>
+          <span class="type-line t-line-6"><span class="t-red">  🚫 bad-lib@2.1.0 — BLOCKED</span></span>
+          <span class="type-line t-line-7"><span class="t-dim">     CRITICAL CVE-2024-39249 in bad-lib</span></span>
+          <span class="type-line t-line-8"><span class="t-dim">     HIGH CVE-2024-38821 — no fix available</span></span><br>
+          <span class="type-line t-line-9"><span class="t-red">  Install cancelled — 1 package blocked.</span></span>
+          <span class="t-cursor"></span>
+        </div>
+      </div>
+      <div class="callout amber" style="margin-top:20px">
+        <div class="callout-tag">Fail-Open Design</div>
+        <div class="callout-title">Never silently breaks your workflow</div>
+        <div class="callout-body">If Trivy isn't installed, the network is down, or a scan times out — Phalanx warns and steps aside. It will never silently break an install.</div>
+      </div>
+    </div>
+  </div>
+  <div style="margin-top:48px">
+    <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--text4);margin-bottom:12px">The intercept pipeline</div>
+    <div class="pipeline">
+      <div class="pipe-step"><div class="ps-tag">01 · Typosquat</div><div class="ps-name">Squat detection</div><div class="ps-sub">Known list · Levenshtein<br>Homoglyph · separators</div></div>
+      <div class="pipe-step"><div class="ps-tag">02 · Freshness</div><div class="ps-name">Metadata compare</div><div class="ps-sub">Registry call<br>vs previous version</div></div>
+      <div class="pipe-step"><div class="ps-tag">03 · Trivy</div><div class="ps-name">CVE + licence</div><div class="ps-sub">Tarball scan<br>Binary or Docker</div></div>
+      <div class="pipe-step"><div class="ps-tag">04 · Behavioural</div><div class="ps-name">14 static rules</div><div class="ps-sub">Extracted tarball<br>Parallel w/ Trivy</div></div>
+      <div class="pipe-step dark"><div class="ps-tag">05 · Policy gate</div><div class="ps-name">Unified decision</div><div class="ps-sub">Inline policy<br>OPA optional</div></div>
+    </div>
+    <div class="pipeline-outcomes">
+      <div class="outcome green-out"><div class="outcome-tag">Allow path</div><div class="outcome-name">exec real npm / pip</div><div class="outcome-sub">All original args passed through · install proceeds · result cached 24h</div></div>
+      <div class="outcome red-out"><div class="outcome-tag">Block path</div><div class="outcome-name">exit 1</div><div class="outcome-sub">Nothing installed · CVEs printed · logged to SQLite</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="section fade-in">
+  <div class="sec-hdr"><div class="sec-num">02</div><h2 class="sec-title">The Shim <span>Architecture</span></h2><div class="sec-rule"></div></div>
+  <div class="two-col">
+    <div>
+      <p style="color:var(--text2);line-height:1.8;margin-bottom:24px">The shim pattern requires no root access, no kernel modules, no system modifications. It's portable, reversible, and transparent.</p>
+      <div class="arch-grid">
+        <div class="arch-cell dark" style="grid-column:1/-1"><div class="arch-label">Shell environment — $PATH resolution order</div><div class="arch-name">~/.phalanx/bin : /usr/local/bin : /usr/bin</div><div class="arch-detail">Shell searches left to right · Phalanx bin is always first</div></div>
+        <div class="arch-cell gray-bg"><div class="arch-label">Position 1 — intercepted</div><div class="arch-name">~/.phalanx/bin/npm</div><div class="arch-detail">2-line bash shim<br>execs phalanx-npm-hook</div><div class="arch-badge" style="color:var(--red)">INTERCEPTS</div></div>
+        <div class="arch-cell arrow">→</div>
+        <div class="arch-cell gray-bg"><div class="arch-label">Phalanx evaluates</div><div class="arch-name">phalanx-npm-hook (Go)</div><div class="arch-detail">Typosquat · Freshness<br>Trivy · Behavioural · Policy</div><div class="arch-badge" style="color:var(--amber)">EVALUATES</div></div>
+        <div class="arch-cell green-bg" style="grid-column:1/-1"><div class="arch-label">If policy passes</div><div class="arch-name">syscall.Exec("/usr/local/bin/npm", originalArgs)</div><div class="arch-detail">Real npm runs with original arguments · developer sees normal output</div></div>
+        <div class="arch-cell red-bg" style="grid-column:1/-1"><div class="arch-label">If policy blocks</div><div class="arch-name">os.Exit(1)</div><div class="arch-detail">Real npm never called · nothing installed · CVE details printed to stderr</div></div>
+      </div>
+      <div class="callout green"><div class="callout-tag">Fully reversible</div><div class="callout-body"><code>phalanx hooks remove</code> deletes shim scripts and removes the PATH entry. Your system is identical to before installation.</div></div>
+    </div>
+    <div>
+      <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text4);margin-bottom:12px">What hooks install creates</div>
+      <div class="terminal" style="margin-bottom:20px">
+        <div class="terminal-titlebar"><div class="tb-dot r"></div><div class="tb-dot y"></div><div class="tb-dot g"></div><span class="tb-label">~/.phalanx/</span></div>
+        <div class="terminal-body" style="font-size:12px;line-height:2">
+          <span style="color:var(--term-dim)"># The npm shim</span><br>
+          <span style="color:var(--term-white)">~/.phalanx/bin/npm</span><br>
+          <span style="color:var(--term-dim)">  #!/usr/bin/env bash</span><br>
+          <span style="color:var(--term-dim)">  exec phalanx-npm-hook "$@"</span><br><br>
+          <span style="color:var(--term-dim)"># Shell config addition</span><br>
+          <span style="color:var(--term-green)">export PATH="$HOME/.phalanx/bin:$PATH"</span><br><br>
+          <span style="color:var(--term-dim)"># SQLite — scan cache + audit log</span><br>
+          <span style="color:var(--term-white)">~/.phalanx/phalanx.db</span><br>
+          <span style="color:var(--term-dim)">  pure-Go modernc.org/sqlite</span><br><br>
+          <span style="color:var(--term-dim)"># Optional — externalised OPA policy</span><br>
+          <span style="color:var(--term-white)">docs/upgrades/opa-policy.md</span>
+        </div>
+      </div>
+      <div class="callout blue"><div class="callout-tag">Optional daemon</div><div class="callout-title">Watch project manifests</div><div class="callout-body">No background process required. Optional daemon watches <code>package.json</code>, <code>requirements.txt</code>, <code>Pipfile</code>, <code>pyproject.toml</code> and re-scans on change — see <code>docs/upgrades</code>.</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="section fade-in">
+  <div class="sec-hdr"><div class="sec-num">03</div><h2 class="sec-title">Why <span>Phalanx</span></h2><div class="sec-rule"></div></div>
+  <p style="color:var(--text2);max-width:660px;line-height:1.8;margin-bottom:36px">Most security tools work on the wrong timeline. Phalanx acts at the exact moment of install, before anything lands.</p>
+  <div class="three-col">
+    <div class="why-card"><span class="why-icon">⏱</span><div class="why-title">Stops threats at the gate</div><div class="why-body">Other tools scan after install. Phalanx blocks before. The vulnerable package never touches your filesystem, your lockfile, or your colleagues' machines.</div></div>
+    <div class="why-card"><span class="why-icon">👻</span><div class="why-title">Invisible to developers</div><div class="why-body">Clean installs show nothing. No dashboard to check, no PR comment to read, no CI job to wait for. Developers run the same commands they always have.</div></div>
+    <div class="why-card"><span class="why-icon">🔒</span><div class="why-title">No account, no cloud</div><div class="why-body">Runs entirely on your machine. Scan results stay in <code>~/.phalanx/</code>. No telemetry, no login, no API key. The CVE database is Trivy's local cache.</div></div>
+    <div class="why-card"><span class="why-icon">🎛</span><div class="why-title">Policy you own</div><div class="why-body">Defaults block CRITICAL CVEs, unfixed HIGH CVEs, known typosquats, GPL / AGPL. <code>phlx allow</code> grants per-package exceptions. Optional upgrade to OPA / Rego for full custom rules.</div></div>
+    <div class="why-card"><span class="why-icon">🐍</span><div class="why-title">npm and pip, one tool</div><div class="why-body">Phalanx covers both ecosystems with the same policy, the same audit log, the same CLI. One install, two package managers protected.</div></div>
+    <div class="why-card"><span class="why-icon">🍃</span><div class="why-title">Zero idle, single static binary</div><div class="why-body">Hooks-only mode: 0 MB until an install triggers a scan (~150 MB peak). Written in Go — single static binary, pure-Go SQLite, no runtime needed.</div></div>
+  </div>
+</div>
+
+<div class="section fade-in">
+  <div class="sec-hdr"><div class="sec-num">04</div><h2 class="sec-title">Phalanx vs <span>Everything Else</span></h2><div class="sec-rule"></div></div>
+  <p style="color:var(--text2);max-width:660px;line-height:1.8;margin-bottom:32px">These tools are excellent at what they do. Phalanx fills the gap none cover: the moment of install itself.</p>
+  <div class="comparison">
+    <table class="comp-table">
+      <thead><tr><th>Capability</th><th class="phalanx">Phalanx</th><th>npm audit</th><th>Snyk CLI</th><th>Socket.dev</th><th>Dependabot</th></tr></thead>
+      <tbody>
+        <tr><td>Blocks install in real time</td><td class="phalanx"><span class="tick">✓</span> Before install</td><td><span class="cross">✗</span> Post-install</td><td><span class="cross">✗</span> Post-install</td><td><span class="part">◑</span> GitHub PR only</td><td><span class="cross">✗</span> PR suggestion</td></tr>
+        <tr><td>Works on local machine</td><td class="phalanx"><span class="tick">✓</span> Fully local</td><td><span class="tick">✓</span></td><td><span class="tick">✓</span></td><td><span class="cross">✗</span> GitHub only</td><td><span class="cross">✗</span> GitHub only</td></tr>
+        <tr><td>Covers pip / Python</td><td class="phalanx"><span class="tick">✓</span> npm + pip</td><td><span class="cross">✗</span> npm only</td><td><span class="tick">✓</span> Many</td><td><span class="part">◑</span> npm only</td><td><span class="tick">✓</span> Many</td></tr>
+        <tr><td>No account or cloud required</td><td class="phalanx"><span class="tick">✓</span> Fully offline</td><td><span class="tick">✓</span></td><td><span class="cross">✗</span> Account required</td><td><span class="cross">✗</span> Account required</td><td><span class="cross">✗</span> GitHub account</td></tr>
+        <tr><td>No data leaves your machine</td><td class="phalanx"><span class="tick">✓</span> No telemetry</td><td><span class="tick">✓</span></td><td><span class="cross">✗</span> Sends metadata</td><td><span class="cross">✗</span> Cloud analysis</td><td><span class="cross">✗</span> GitHub platform</td></tr>
+        <tr><td>Customisable security policy</td><td class="phalanx"><span class="tick">✓</span> Inline · OPA optional</td><td><span class="cross">✗</span></td><td><span class="part">◑</span> Paid</td><td><span class="part">◑</span> Paid</td><td><span class="part">◑</span> Limited</td></tr>
+        <tr><td>Licence scanning</td><td class="phalanx"><span class="tick">✓</span> GPL / AGPL block</td><td><span class="cross">✗</span></td><td><span class="tick">✓</span> Paid</td><td><span class="tick">✓</span></td><td><span class="cross">✗</span></td></tr>
+        <tr><td>Memory footprint idle</td><td class="phalanx"><span class="tick">✓</span> 0 MB hooks-only</td><td><span class="tick">✓</span> 0</td><td>~100 MB+</td><td>N/A cloud</td><td>N/A cloud</td></tr>
+        <tr><td>Open source · free forever</td><td class="phalanx"><span class="tick">✓</span> MIT · always free</td><td><span class="tick">✓</span></td><td><span class="part">◑</span> Core only</td><td><span class="cross">✗</span></td><td><span class="tick">✓</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="callout amber"><div class="callout-tag">The recommendation</div><div class="callout-title">Use Phalanx and your existing tools together</div><div class="callout-body">Phalanx plugs the gap between your keyboard and your package manager. It doesn't replace <code>npm audit</code> in CI or Dependabot on GitHub. Run all three. Phalanx stops bad packages before they ever reach a commit.</div></div>
+</div>
+
+<div class="section fade-in">
+  <div class="sec-hdr"><div class="sec-num">05</div><h2 class="sec-title">The Security <span>Timeline</span></h2><div class="sec-rule"></div></div>
+  <p style="color:var(--text2);max-width:660px;line-height:1.8;margin-bottom:12px">Where does each tool intercept? Earlier means less cleanup, smaller blast radius, lower remediation cost.</p>
+  <div style="display:flex;align-items:center;gap:12px;margin:20px 0 8px">
+    <span style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--green)">← Earlier · Cheaper to fix</span>
+    <div style="flex:1;height:3px;background:linear-gradient(90deg,#15803d,#b45309,#b91c1c)"></div>
+    <span style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--red)">Later · Expensive →</span>
+  </div>
+  <div class="timeline-grid">
+    <div class="tl-cell highlight"><div class="tl-stage">npm install</div><div class="tl-name">Developer machine</div><div class="tl-sub">Package about to land in node_modules</div><div class="tl-tool">← PHALANX</div></div>
+    <div class="tl-cell"><div class="tl-stage">git commit</div><div class="tl-name">Committed</div><div class="tl-sub">In lockfile and history</div></div>
+    <div class="tl-cell"><div class="tl-stage">git push / PR</div><div class="tl-name">Pull Request</div><div class="tl-sub">Visible to the team</div><div class="tl-tool">Socket.dev</div></div>
+    <div class="tl-cell"><div class="tl-stage">CI pipeline</div><div class="tl-name">Build &amp; Test</div><div class="tl-sub">Running in shared infra</div><div class="tl-tool">npm audit · Snyk</div></div>
+    <div class="tl-cell"><div class="tl-stage">merged</div><div class="tl-name">Main branch</div><div class="tl-sub">In the codebase permanently</div><div class="tl-tool">Dependabot</div></div>
+    <div class="tl-cell danger"><div class="tl-stage">deployed</div><div class="tl-name">Production</div><div class="tl-sub">In front of real users</div><div class="tl-tool">Too late</div></div>
+  </div>
+  <div class="two-col" style="margin-top:8px">
+    <div class="callout green"><div class="callout-tag">Defence in depth</div><div class="callout-title">Phalanx is the first line</div><div class="callout-body">A vulnerability stopped at install never reaches git history, never triggers a CI failure, never needs a hotfix PR. Remediation cost is zero because there's nothing to remediate.</div></div>
+    <div class="callout red"><div class="callout-tag">Supply chain attacks</div><div class="callout-title">Typosquats have no CVE yet</div><div class="callout-body"><code>npm audit</code> only knows about vulnerabilities already in the advisory database. A freshly published typosquat has no CVE. Phalanx scans the tarball itself — not just the advisory feed.</div></div>
+  </div>
+</div>
+
+<div class="section fade-in">
+  <div class="sec-hdr"><div class="sec-num">06</div><h2 class="sec-title">Get <span>Started</span></h2><div class="sec-rule"></div></div>
+  <div class="two-col">
+    <div>
+      <div class="qs-steps">
+        <div class="qs-step"><div class="qs-num">1</div><div><div class="qs-title">Install Go and Trivy</div><div class="qs-body"><code>brew install go trivy</code> on macOS. Trivy is optional — fail-open without it. Docker also works as a Trivy fallback.</div></div></div>
+        <div class="qs-step"><div class="qs-num">2</div><div><div class="qs-title">Build the three binaries</div><div class="qs-body"><code>git clone https://github.com/satnambhatt/phlx &amp;&amp; cd phlx</code>, then <code>go build</code> each of <code>./cmd/phalanx</code>, <code>./cmd/phalanx-npm-hook</code>, <code>./cmd/phalanx-pip-hook</code> into <code>bin/</code>.</div></div></div>
+        <div class="qs-step"><div class="qs-num">3</div><div><div class="qs-title">Put on PATH</div><div class="qs-body">Copy all three to <code>/usr/local/bin</code>, or <code>go install</code> each command. All three binaries must live in the same directory.</div></div></div>
+        <div class="qs-step"><div class="qs-num">4</div><div><div class="qs-title">Arm the hooks</div><div class="qs-body"><code>phalanx hooks install</code> then <code>source ~/.zshrc</code>. Verify with <code>which npm</code> — should resolve to <code>~/.phalanx/bin/npm</code>.</div></div></div>
+        <div class="qs-step"><div class="qs-num">5</div><div><div class="qs-title">Try it</div><div class="qs-body">Run <code>npm install lodash</code>. First run downloads Trivy's CVE database. Every subsequent scan is near-instant from the 24h SQLite cache.</div></div></div>
+      </div>
+    </div>
+    <div>
+      <div class="terminal">
+        <div class="terminal-titlebar"><div class="tb-dot r"></div><div class="tb-dot y"></div><div class="tb-dot g"></div><span class="tb-label">setup</span></div>
+        <div class="terminal-body" style="font-size:12px;line-height:2.1">
+          <span style="color:var(--term-dim)"># macOS — build + install</span><br>
+          <span style="color:var(--term-green)">$</span><span style="color:var(--term-white)"> brew install go trivy</span><br>
+          <span style="color:var(--term-green)">$</span><span style="color:var(--term-white)"> git clone https://github.com/satnambhatt/phlx</span><br>
+          <span style="color:var(--term-green)">$</span><span style="color:var(--term-white)"> cd phlx &amp;&amp; go mod tidy</span><br>
+          <span style="color:var(--term-green)">$</span><span style="color:var(--term-white)"> go build -o bin/phalanx          ./cmd/phalanx</span><br>
+          <span style="color:var(--term-green)">$</span><span style="color:var(--term-white)"> go build -o bin/phalanx-npm-hook ./cmd/phalanx-npm-hook</span><br>
+          <span style="color:var(--term-green)">$</span><span style="color:var(--term-white)"> go build -o bin/phalanx-pip-hook ./cmd/phalanx-pip-hook</span><br>
+          <span style="color:var(--term-green)">$</span><span style="color:var(--term-white)"> sudo cp bin/phalanx* /usr/local/bin/</span><br><br>
+          <span style="color:var(--term-dim)"># Arm the shell hooks</span><br>
+          <span style="color:var(--term-green)">$</span><span style="color:var(--term-white)"> phalanx hooks install</span><br>
+          <span style="color:var(--term-green)">$</span><span style="color:var(--term-white)"> source ~/.zshrc</span><br>
+          <span style="color:var(--term-dim)">  [phalanx] holding the line</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<div class="footer">
+  <span>Phalanx · MIT Licence · github.com/satnambhatt/phlx</span>
+  <span>Built with Go · Trivy · SQLite (modernc) · Cobra</span>
+  <span>OPA · Verdaccio optional</span>
+</div>
+
+<script>
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible') })
+}, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' })
+document.querySelectorAll('.fade-in').forEach(el => obs.observe(el))
+</script>
+</body>
+</html>
