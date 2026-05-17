@@ -389,9 +389,9 @@ body { background:var(--white); color:var(--text); font-family:'DM Sans',sans-se
   <div class="two-col">
     <div>
       <div class="qs-steps">
-        <div class="qs-step"><div class="qs-num">1</div><div><div class="qs-title">Install Go and Trivy</div><div class="qs-body"><code>brew install go trivy</code> on macOS. Trivy is optional — fail-open without it. Docker also works as a Trivy fallback.</div></div></div>
-        <div class="qs-step"><div class="qs-num">2</div><div><div class="qs-title">Build the three binaries</div><div class="qs-body"><code>git clone https://github.com/satnambhatt/phlx &amp;&amp; cd phlx</code>, then <code>go build</code> each of <code>./cmd/phalanx</code>, <code>./cmd/phalanx-npm-hook</code>, <code>./cmd/phalanx-pip-hook</code> into <code>bin/</code>.</div></div></div>
-        <div class="qs-step"><div class="qs-num">3</div><div><div class="qs-title">Put on PATH</div><div class="qs-body">Copy all three to <code>/usr/local/bin</code>, or <code>go install</code> each command. All three binaries must live in the same directory.</div></div></div>
+        <div class="qs-step"><div class="qs-num">1</div><div><div class="qs-title">Install Trivy</div><div class="qs-body"><code>brew install trivy</code> on macOS · <code>apt install trivy</code> on Debian/Ubuntu. Optional — Phalanx fails open without it. Docker also works as fallback.</div></div></div>
+        <div class="qs-step"><div class="qs-num">2</div><div><div class="qs-title">Pin the version</div><div class="qs-body">Grab the latest tag from <a href="https://github.com/satnambhatt/phlx/releases" style="color:var(--blue)">releases</a> — e.g. <code>VERSION=0.1.0</code>. Or auto-detect via the GitHub API (see terminal).</div></div></div>
+        <div class="qs-step"><div class="qs-num">3</div><div><div class="qs-title">curl · extract · move</div><div class="qs-body">Single pipe downloads the archive and extracts three binaries into the working directory. Move them to <code>/usr/local/bin</code> — all three must live in the same directory.</div></div></div>
         <div class="qs-step"><div class="qs-num">4</div><div><div class="qs-title">Arm the hooks</div><div class="qs-body"><code>phalanx hooks install</code> then <code>source ~/.zshrc</code>. Verify with <code>which npm</code> — should resolve to <code>~/.phalanx/bin/npm</code>.</div></div></div>
         <div class="qs-step"><div class="qs-num">5</div><div><div class="qs-title">Try it</div><div class="qs-body">Run <code>npm install lodash</code>. First run downloads Trivy's CVE database. Every subsequent scan is near-instant from the 24h SQLite cache.</div></div></div>
       </div>
@@ -400,15 +400,18 @@ body { background:var(--white); color:var(--text); font-family:'DM Sans',sans-se
       <div class="terminal">
         <div class="terminal-titlebar"><div class="tb-dot r"></div><div class="tb-dot y"></div><div class="tb-dot g"></div><span class="tb-label">setup</span></div>
         <div class="terminal-body" style="font-size:12px;line-height:2.1">
-          <span style="color:var(--term-dim)"># macOS — build + install</span><br>
-          <span style="color:var(--term-green)">$</span><span style="color:var(--term-white)"> brew install go trivy</span><br>
-          <span style="color:var(--term-green)">$</span><span style="color:var(--term-white)"> git clone https://github.com/satnambhatt/phlx</span><br>
-          <span style="color:var(--term-green)">$</span><span style="color:var(--term-white)"> cd phlx &amp;&amp; go mod tidy</span><br>
-          <span style="color:var(--term-green)">$</span><span style="color:var(--term-white)"> go build -o bin/phalanx          ./cmd/phalanx</span><br>
-          <span style="color:var(--term-green)">$</span><span style="color:var(--term-white)"> go build -o bin/phalanx-npm-hook ./cmd/phalanx-npm-hook</span><br>
-          <span style="color:var(--term-green)">$</span><span style="color:var(--term-white)"> go build -o bin/phalanx-pip-hook ./cmd/phalanx-pip-hook</span><br>
-          <span style="color:var(--term-green)">$</span><span style="color:var(--term-white)"> sudo cp bin/phalanx* /usr/local/bin/</span><br><br>
-          <span style="color:var(--term-dim)"># Arm the shell hooks</span><br>
+          <span style="color:var(--term-dim)"># 1 — prerequisites</span><br>
+          <span style="color:var(--term-green)">$</span><span style="color:var(--term-white)"> brew install trivy</span><br><br>
+          <span style="color:var(--term-dim)"># 2 — pin latest release</span><br>
+          <span style="color:var(--term-green)">$</span><span style="color:var(--term-white)"> VERSION=$(curl -s https://api.github.com/repos/\</span><br>
+          <span style="color:var(--term-white)">    satnambhatt/phlx/releases/latest \</span><br>
+          <span style="color:var(--term-white)">    | grep tag_name | cut -d'"' -f4 | sed 's/^v//')</span><br><br>
+          <span style="color:var(--term-dim)"># 3 — download · extract · install (macOS arm64)</span><br>
+          <span style="color:var(--term-green)">$</span><span style="color:var(--term-white)"> curl -sSL https://github.com/satnambhatt/phlx/\</span><br>
+          <span style="color:var(--term-white)">    releases/download/v${VERSION}/\</span><br>
+          <span style="color:var(--term-white)">    phlx_${VERSION}_macos_arm64.tar.gz | tar -xz</span><br>
+          <span style="color:var(--term-green)">$</span><span style="color:var(--term-white)"> sudo mv phalanx phalanx-*-hook /usr/local/bin/</span><br><br>
+          <span style="color:var(--term-dim)"># 4 — arm the shell hooks</span><br>
           <span style="color:var(--term-green)">$</span><span style="color:var(--term-white)"> phalanx hooks install</span><br>
           <span style="color:var(--term-green)">$</span><span style="color:var(--term-white)"> source ~/.zshrc</span><br>
           <span style="color:var(--term-dim)">  [phalanx] holding the line</span>

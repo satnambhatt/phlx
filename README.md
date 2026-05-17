@@ -35,15 +35,72 @@ Written in Go — single static binary, pure-Go SQLite, no runtime needed.
 ### Prerequisites
 | Tool | Why |
 |---|---|
-| Go 1.22+ | building from source |
 | Trivy | Stage 3 CVE scan (optional — fail-open without it) |
 | Docker | Trivy fallback when binary not installed (optional) |
+| Go 1.22+ | only if building from source |
 
 ```bash
-brew install go trivy
+brew install trivy
 ```
 
-### Build
+---
+
+### Option 1 — Prebuilt binary (recommended)
+
+Pick the latest tag from
+[github.com/satnambhatt/phlx/releases](https://github.com/satnambhatt/phlx/releases)
+and export it once:
+
+```bash
+VERSION=$(curl -s https://api.github.com/repos/satnambhatt/phlx/releases/latest \
+  | grep tag_name | cut -d'"' -f4 | sed 's/^v//')
+echo "$VERSION"
+```
+
+**macOS — Apple Silicon (arm64):**
+```bash
+curl -sSL "https://github.com/satnambhatt/phlx/releases/download/v${VERSION}/phlx_${VERSION}_macos_arm64.tar.gz" | tar -xz
+sudo mv phalanx phalanx-npm-hook phalanx-pip-hook /usr/local/bin/
+```
+
+**macOS — Intel (x86_64):**
+```bash
+curl -sSL "https://github.com/satnambhatt/phlx/releases/download/v${VERSION}/phlx_${VERSION}_macos_x86_64.tar.gz" | tar -xz
+sudo mv phalanx phalanx-npm-hook phalanx-pip-hook /usr/local/bin/
+```
+
+**Linux — x86_64:**
+```bash
+curl -sSL "https://github.com/satnambhatt/phlx/releases/download/v${VERSION}/phlx_${VERSION}_linux_x86_64.tar.gz" | tar -xz
+sudo mv phalanx phalanx-npm-hook phalanx-pip-hook /usr/local/bin/
+```
+
+**Linux — arm64:**
+```bash
+curl -sSL "https://github.com/satnambhatt/phlx/releases/download/v${VERSION}/phlx_${VERSION}_linux_arm64.tar.gz" | tar -xz
+sudo mv phalanx phalanx-npm-hook phalanx-pip-hook /usr/local/bin/
+```
+
+**Windows — x86_64 (PowerShell):**
+```powershell
+$VERSION = (Invoke-RestMethod https://api.github.com/repos/satnambhatt/phlx/releases/latest).tag_name -replace '^v',''
+Invoke-WebRequest -Uri "https://github.com/satnambhatt/phlx/releases/download/v$VERSION/phlx_${VERSION}_windows_x86_64.zip" -OutFile phlx.zip
+Expand-Archive phlx.zip -DestinationPath "$Env:USERPROFILE\bin"
+```
+
+**Verify checksum (optional):**
+```bash
+curl -sSL "https://github.com/satnambhatt/phlx/releases/download/v${VERSION}/checksums.txt" \
+  | shasum -a 256 -c --ignore-missing
+```
+
+All three binaries must live in the **same directory** — the shim installer
+looks for the hooks next to the main `phalanx` binary.
+
+---
+
+### Option 2 — Build from source
+
 ```bash
 git clone https://github.com/satnambhatt/phlx
 cd phlx
@@ -53,27 +110,18 @@ go build -o bin/phalanx          ./cmd/phalanx
 go build -o bin/phalanx-npm-hook ./cmd/phalanx-npm-hook
 go build -o bin/phalanx-pip-hook ./cmd/phalanx-pip-hook
 ln -sf phalanx bin/phlx
-```
-
-Three binaries land in `./bin/` (~15 MB each). The `phlx` symlink is a short
-alias for `phalanx` — both work identically.
-
-### Put on PATH (pick one)
-
-**Option A — copy to `/usr/local/bin`:**
-```bash
 sudo cp bin/phalanx bin/phalanx-npm-hook bin/phalanx-pip-hook /usr/local/bin/
 sudo ln -sf /usr/local/bin/phalanx /usr/local/bin/phlx
 ```
 
-**Option B — `go install` to `$GOPATH/bin`:**
+Or via `go install`:
 ```bash
-go install ./cmd/phalanx ./cmd/phalanx-npm-hook ./cmd/phalanx-pip-hook
-ln -sf $(go env GOPATH)/bin/phalanx $(go env GOPATH)/bin/phlx
+go install github.com/satnambhatt/phlx/cmd/phalanx@latest
+go install github.com/satnambhatt/phlx/cmd/phalanx-npm-hook@latest
+go install github.com/satnambhatt/phlx/cmd/phalanx-pip-hook@latest
 ```
 
-All three binaries must live in the **same directory** — the shim installer
-looks for the hooks next to the main `phalanx` binary.
+---
 
 ### Activate hooks
 ```bash
