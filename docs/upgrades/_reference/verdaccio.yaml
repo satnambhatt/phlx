@@ -1,0 +1,19 @@
+storage: /verdaccio/storage
+auth:
+  htpasswd:
+    file: /verdaccio/conf/htpasswd
+    max_users: -1   # unlimited for local use
+uplinks:
+  npmjs:
+    url: https://registry.npmjs.org/
+packages:
+  '**':
+    access: $all      # open for local use
+    publish: $all
+    proxy: npmjs      # proxy to npm for packages not yet scanned
+server:
+  keepAliveTimeout: 60
+log:
+  type: stdout
+  format: pretty
+  level: warn       # quiet by default

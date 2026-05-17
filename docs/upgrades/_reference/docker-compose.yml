@@ -1,0 +1,69 @@
+version: "3.9"
+
+# Phalanx OSS — minimal local stack
+# Total RAM: ~350 MB idle, ~600 MB during active scan
+# Starts in <10s, auto-restarts, invisible in background
+
+networks:
+  shield:
+    driver: bridge
+
+volumes:
+  shield-db:
+  trivy-cache:
+  verdaccio-storage:
+
+services:
+
+  # ── Verdaccio: private npm registry ───────────────────────────────────────
+  # Only service that needs to stay running — serves approved packages
+  registry:
+    image: verdaccio/verdaccio:6
+    container_name: phalanx-registry
+    restart: unless-stopped
+    volumes:
+      - ./config/verdaccio.yaml:/verdaccio/conf/config.yaml:ro
+      - ./config/htpasswd:/verdaccio/conf/htpasswd
+      - verdaccio-storage:/verdaccio/storage
+    ports:
+      - "4873:4873"
+    networks: [shield]
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:4873/-/ping"]
+      interval: 15s
+      timeout: 3s
+      retries: 3
+    deploy:
+      resources:
+        limits: { memory: 128M }
+
+  # ── Trivy: vulnerability scanner ─────────────────────────────────────────
+  # Starts on-demand when a scan is needed, exits when done
+  # scanner-worker calls: docker compose run --rm trivy
+  trivy:
+    image: aquasec/trivy:latest
+    container_name: phalanx-trivy
+    profiles: ["scan"]          # only starts when explicitly invoked
+    volumes:
+      - trivy-cache:/root/.cache/trivy
+      - /tmp/phalanx-scan:/scan:ro
+    networks: [shield]
+    deploy:
+      resources:
+        limits: { memory: 256M }
+
+  # ── OPA: policy engine ───────────────────────────────────────────────────
+  # Starts on-demand alongside trivy, exits after gate decision
+  opa:
+    image: openpolicyagent/opa:latest-static
+    container_name: phalanx-opa
+    profiles: ["scan"]
+    command: run --server --addr=0.0.0.0:8181 /policies
+    volumes:
+      - ./config/policies:/policies:ro
+    ports:
+      - "8181:8181"
+    networks: [shield]
+    deploy:
+      resources:
+        limits: { memory: 32M }
