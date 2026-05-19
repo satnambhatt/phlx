@@ -40,6 +40,7 @@ phlx/
 │   ├── trivy/                # Trivy invocation (binary or docker)
 │   ├── analysers/            # typosquat / freshness / behavioural
 │   ├── registry/             # npm + PyPI metadata + tarball download
+│   ├── hookcore/             # shared scan→passthrough flow for every shim
 │   └── hooks/                # shim installer + PATH writer
 ├── docs/                     # CLI reference, AI tool guidance, upgrades
 ├── .goreleaser.yaml          # release pipeline — three+ binaries per arch
@@ -77,9 +78,10 @@ file alongside the code; do not introduce a separate `tests/` tree.
 - **Fail open.** Any scan / network / disk error in the hooks must log a
   faint warning and pass through to the real package manager. The user
   should never lose work because Phalanx had a bad day.
-- **Three binaries stay in lockstep.** If you add a feature that touches
-  the database schema, scanner, or hook protocol, update the npm, yarn, and
-  pip hooks together. `.goreleaser.yaml` must build and ship every binary.
+- **Hooks share one core.** Every `cmd/phalanx-*-hook` is a thin config
+  for `internal/hookcore`. Behavioural changes that affect every shim
+  (scan loop, fail-open path, output format) belong in `hookcore`, not in
+  the cmd files. `.goreleaser.yaml` must build and ship every binary.
 - **Output style.** Indent with two spaces, use the existing `color`
   helpers, no emojis in code or commits. The CLI banner and result format
   must stay consistent across `scan`, the hooks, and any new command.
@@ -127,6 +129,7 @@ file alongside the code; do not introduce a separate `tests/` tree.
 | How is a package scanned? | `internal/scanner/` orchestrator |
 | How is the install gated? | `internal/policy/` |
 | How do shims call the hooks? | `internal/hooks/install.go` |
+| What runs inside each hook? | `internal/hookcore/hookcore.go` |
 | How does `phlx update` work? | `internal/cli/update.go` |
 | What does the CLI surface? | `internal/cli/commands.go` |
 | Where is history stored? | `internal/db/db.go` |

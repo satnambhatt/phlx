@@ -36,21 +36,25 @@ npm / yarn / pip.
 **Steps**:
 1. Add resolver + tarball downloader in `internal/registry/` mirroring
    `ResolveNpmVersion` / `ResolvePypiVersion`.
-2. Create `cmd/phalanx-<eco>-hook/main.go` cloned from
-   `cmd/phalanx-npm-hook/main.go`. The shape (`parseArgs`,
-   `findReal<X>`, `passThrough`, scan loop, fail-open) is fixed —
-   keep it.
-3. Add the binary to:
+2. Create `cmd/phalanx-<eco>-hook/main.go` — a ~25-line `main` that
+   builds a `hookcore.Config` and calls `hookcore.Run(cfg)`. Clone one
+   of the existing hooks; everything ecosystem-shaped (subcommand
+   names, regex, skip prefixes, flags-with-value) is plain config.
+3. If the ecosystem needs behaviour the existing `hookcore.Parser`
+   can't express, extend `internal/hookcore/hookcore.go` rather than
+   inlining logic in the cmd.
+4. Add the binary to:
    - `.goreleaser.yaml` builds list **and** the `archives.ids` list
    - `internal/cli/update.go` `hookBinaries` slice
    - `internal/hooks/install.go` `Install()` and `Remove()` shim lists
-4. Wire ecosystem-specific scan rules in `internal/scanner/` and
+5. Wire ecosystem-specific scan rules in `internal/scanner/` and
    `internal/policy/` if the existing rules don't apply cleanly.
-5. Add the ecosystem to `docs/cli.md` and to the CLI reference table in
+6. Add the ecosystem to `docs/cli.md` and to the CLI reference table in
    `README.md`.
 
-**Invariant**: every new hook must fail open. If the registry call,
-scanner, or database is unavailable, log faint and exec the real binary.
+**Invariant**: every new hook must fail open. `hookcore.Run` already
+implements the fail-open behaviour — keep ecosystem-specific code out
+of the cmd file so this stays true by construction.
 
 ---
 
