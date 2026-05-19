@@ -64,6 +64,7 @@ func Install() error {
 
 	npmHook := filepath.Join(exeDir, "phalanx-npm-hook")
 	pipHook := filepath.Join(exeDir, "phalanx-pip-hook")
+	yarnHook := filepath.Join(exeDir, "phalanx-yarn-hook")
 
 	// npm
 	if real := findReal("npm"); real != "" {
@@ -77,24 +78,40 @@ func Install() error {
 		fmt.Printf("  %s npm not found — skipping\n", color.YellowString("⚠"))
 	}
 
-	// pip / pip3
+	// yarn
+	if real := findReal("yarn"); real != "" {
+		shim, err := writeShim("yarn", yarnHook)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("  %s yarn shim → %s\n", color.GreenString("✓"), color.New(color.Faint).Sprint(shim))
+		fmt.Printf("    %s\n", color.New(color.Faint).Sprintf("real yarn: %s", real))
+	} else {
+		fmt.Printf("  %s yarn not found — skipping\n", color.YellowString("⚠"))
+	}
+
+	// pip / pip3 — install shims for whichever is present.
 	pipReal := findReal("pip")
 	pip3Real := findReal("pip3")
-	if pipReal != "" || pip3Real != "" {
-		for _, cmd := range []string{"pip", "pip3"} {
-			shim, err := writeShim(cmd, pipHook)
+	if pipReal == "" && pip3Real == "" {
+		fmt.Printf("  %s pip/pip3 not found — skipping\n", color.YellowString("⚠"))
+	} else {
+		if pipReal != "" {
+			shim, err := writeShim("pip", pipHook)
 			if err != nil {
 				return err
 			}
-			fmt.Printf("  %s %s shim → %s\n", color.GreenString("✓"), cmd, color.New(color.Faint).Sprint(shim))
+			fmt.Printf("  %s pip shim → %s\n", color.GreenString("✓"), color.New(color.Faint).Sprint(shim))
+			fmt.Printf("    %s\n", color.New(color.Faint).Sprintf("real pip: %s", pipReal))
 		}
-		realPick := pipReal
-		if realPick == "" {
-			realPick = pip3Real
+		if pip3Real != "" {
+			shim, err := writeShim("pip3", pipHook)
+			if err != nil {
+				return err
+			}
+			fmt.Printf("  %s pip3 shim → %s\n", color.GreenString("✓"), color.New(color.Faint).Sprint(shim))
+			fmt.Printf("    %s\n", color.New(color.Faint).Sprintf("real pip3: %s", pip3Real))
 		}
-		fmt.Printf("    %s\n", color.New(color.Faint).Sprintf("real pip: %s", realPick))
-	} else {
-		fmt.Printf("  %s pip/pip3 not found — skipping\n", color.YellowString("⚠"))
 	}
 
 	// Append PATH entry to first existing shell rc
@@ -148,7 +165,7 @@ func tildeify(p, home string) string {
 func Remove() error {
 	color.New(color.FgCyan, color.Bold).Println("\n  Removing phalanx hooks...")
 	pb := phalanxBin()
-	for _, c := range []string{"npm", "pip", "pip3"} {
+	for _, c := range []string{"npm", "yarn", "pip", "pip3"} {
 		p := filepath.Join(pb, c)
 		if _, err := os.Stat(p); err == nil {
 			os.Remove(p)

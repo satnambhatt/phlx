@@ -6,9 +6,9 @@
 > *The ancient Greek formation where shields interlock. Nothing gets through.*
 > *To Note: The code is written using the help of Claude Code.* 
 
-Phalanx intercepts `npm install` and `pip install` at the shell level, scans
-every package for vulnerabilities before it touches your machine, and blocks
-anything dangerous. Developers change nothing about how they work.
+Phalanx intercepts `npm install`, `yarn add`, and `pip install` at the shell
+level, scans every package for vulnerabilities before it touches your machine,
+and blocks anything dangerous. Developers change nothing about how they work.
 
 ```
 $ npm install express
@@ -60,25 +60,25 @@ echo "$VERSION"
 **macOS — Apple Silicon (arm64):**
 ```bash
 curl -sSL "https://github.com/satnambhatt/phlx/releases/download/v${VERSION}/phlx_${VERSION}_macos_arm64.tar.gz" | tar -xz
-sudo mv phalanx phalanx-npm-hook phalanx-pip-hook /usr/local/bin/
+sudo mv phalanx phalanx-npm-hook phalanx-pip-hook phalanx-yarn-hook /usr/local/bin/
 ```
 
 **macOS — Intel (x86_64):**
 ```bash
 curl -sSL "https://github.com/satnambhatt/phlx/releases/download/v${VERSION}/phlx_${VERSION}_macos_x86_64.tar.gz" | tar -xz
-sudo mv phalanx phalanx-npm-hook phalanx-pip-hook /usr/local/bin/
+sudo mv phalanx phalanx-npm-hook phalanx-pip-hook phalanx-yarn-hook /usr/local/bin/
 ```
 
 **Linux — x86_64:**
 ```bash
 curl -sSL "https://github.com/satnambhatt/phlx/releases/download/v${VERSION}/phlx_${VERSION}_linux_x86_64.tar.gz" | tar -xz
-sudo mv phalanx phalanx-npm-hook phalanx-pip-hook /usr/local/bin/
+sudo mv phalanx phalanx-npm-hook phalanx-pip-hook phalanx-yarn-hook /usr/local/bin/
 ```
 
 **Linux — arm64:**
 ```bash
 curl -sSL "https://github.com/satnambhatt/phlx/releases/download/v${VERSION}/phlx_${VERSION}_linux_arm64.tar.gz" | tar -xz
-sudo mv phalanx phalanx-npm-hook phalanx-pip-hook /usr/local/bin/
+sudo mv phalanx phalanx-npm-hook phalanx-pip-hook phalanx-yarn-hook /usr/local/bin/
 ```
 
 **Windows — x86_64 (PowerShell):**
@@ -106,11 +106,12 @@ git clone https://github.com/satnambhatt/phlx
 cd phlx
 go mod tidy
 mkdir -p bin
-go build -o bin/phalanx          ./cmd/phalanx
-go build -o bin/phalanx-npm-hook ./cmd/phalanx-npm-hook
-go build -o bin/phalanx-pip-hook ./cmd/phalanx-pip-hook
+go build -o bin/phalanx           ./cmd/phalanx
+go build -o bin/phalanx-npm-hook  ./cmd/phalanx-npm-hook
+go build -o bin/phalanx-pip-hook  ./cmd/phalanx-pip-hook
+go build -o bin/phalanx-yarn-hook ./cmd/phalanx-yarn-hook
 ln -sf phalanx bin/phlx
-sudo cp bin/phalanx bin/phalanx-npm-hook bin/phalanx-pip-hook /usr/local/bin/
+sudo cp bin/phalanx bin/phalanx-npm-hook bin/phalanx-pip-hook bin/phalanx-yarn-hook /usr/local/bin/
 sudo ln -sf /usr/local/bin/phalanx /usr/local/bin/phlx
 ```
 
@@ -119,6 +120,7 @@ Or via `go install`:
 go install github.com/satnambhatt/phlx/cmd/phalanx@latest
 go install github.com/satnambhatt/phlx/cmd/phalanx-npm-hook@latest
 go install github.com/satnambhatt/phlx/cmd/phalanx-pip-hook@latest
+go install github.com/satnambhatt/phlx/cmd/phalanx-yarn-hook@latest
 ```
 
 ---
@@ -132,18 +134,19 @@ source ~/.zshrc        # or ~/.zprofile / ~/.bashrc
 Verify:
 ```bash
 which npm     # → ~/.phalanx/bin/npm
+which yarn    # → ~/.phalanx/bin/yarn
 which pip3    # → ~/.phalanx/bin/pip3
 ```
 
-Every `npm install` and `pip install` is now protected.
+Every `npm install`, `yarn add`, and `pip install` is now protected.
 
 ---
 
 ## How it works
 
-Phalanx installs shim scripts at `~/.phalanx/bin/{npm,pip,pip3}`, prepended to
-`$PATH`. Each shim calls a small Go binary that scans, then either blocks or
-execs the real package manager.
+Phalanx installs shim scripts at `~/.phalanx/bin/{npm,yarn,pip,pip3}`,
+prepended to `$PATH`. Each shim calls a small Go binary that scans, then
+either blocks or execs the real package manager.
 
 ```
 You type: npm install lodash
@@ -172,19 +175,46 @@ Phalanx warns and steps aside. Never silently breaks your workflow.
 
 Both `phalanx` and `phlx` work — they are the same binary.
 
+| Command | Purpose |
+|---|---|
+| `phlx scan <pkg>[@<v>]` | Manually scan a package |
+| `phlx status` | Scan stats from local SQLite |
+| `phlx history -n 20` | Recent install events |
+| `phlx watch [path]` | Register a project (see [docs/upgrades](docs/upgrades/README.md)) |
+| `phlx allow <pkg>@<v> -r "<reason>"` | Bypass the gate |
+| `phlx hooks install` / `phlx hooks remove` | Manage shell shims |
+| `phlx config [key] [value]` | Read or write configuration |
+| `phlx update` | Pull and install the latest released version |
+| `phlx --version` | Print the build-stamped version |
+
+Full reference with every flag and exit code: **[docs/cli.md](docs/cli.md)**.
+
 ```bash
 phlx scan lodash                       # manual scan
 phlx scan express@4.18.3
 phlx scan requests==2.31.0 -e pip
-phlx status                            # scan stats from local SQLite
-phlx history -n 20                     # recent install events
-phlx watch ./my-project                # register project (see docs/upgrades)
-phlx allow some-pkg@1.2.3 -r "..."     # bypass gate
-phlx hooks install / remove            # manage shell hooks
-phlx config                            # show/set config
+phlx update --check                    # see if a newer release is out
+phlx update                            # download + replace binaries
 ```
 
 All state lives in `~/.phalanx/phalanx.db`. No background process required.
+
+---
+
+## Using with AI coding tools
+
+Phalanx hooks the package manager, not the editor — so Claude Code, Cursor,
+Aider, Continue, Copilot Workspace, and any other agent that shells out to
+`npm` / `yarn` / `pip` is gated automatically once `phlx hooks install` is
+done.
+
+For per-tool setup notes (Claude Code session hooks, Cursor rules, devcontainer
+snippets) see **[docs/ai-coding-tools.md](docs/ai-coding-tools.md)**.
+
+Repo-level briefings for AI assistants live in the standard locations:
+
+- **[AGENTS.md](AGENTS.md)** — invariants, layout, what not to do
+- **[SKILLS.md](SKILLS.md)** — task-shaped recipes (add a command, add an ecosystem, cut a release)
 
 ---
 
@@ -263,7 +293,7 @@ upx --best bin/phalanx       # optional, ~5 MB result
 
 ```bash
 phalanx hooks remove
-sudo rm /usr/local/bin/{phalanx,phalanx-npm-hook,phalanx-pip-hook,phlx}
+sudo rm /usr/local/bin/{phalanx,phalanx-npm-hook,phalanx-pip-hook,phalanx-yarn-hook,phlx}
 rm -rf ~/.phalanx
 ```
 
@@ -276,7 +306,8 @@ phlx/
 ├── cmd/
 │   ├── phalanx/              # main CLI (cobra root)
 │   ├── phalanx-npm-hook/     # npm shim binary
-│   └── phalanx-pip-hook/     # pip shim binary
+│   ├── phalanx-pip-hook/     # pip / pip3 shim binary
+│   └── phalanx-yarn-hook/    # yarn shim binary
 ├── internal/
 │   ├── db/                   # SQLite (modernc.org/sqlite, pure Go)
 │   ├── scanner/              # 5-stage pipeline orchestrator
