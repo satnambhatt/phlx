@@ -109,28 +109,40 @@ Adds an entry to the allow list keyed `allow:<eco>:<pkg>:<version>`. Use
 ## `hooks`
 
 ```bash
-phlx hooks install
-phlx hooks remove
+phlx hooks install                 # every hook whose real binary is on PATH
+phlx hooks install npm yarn        # only npm + yarn
+phlx hooks install pip3            # only pip3
+phlx hooks remove                  # every shim + strip PATH line
+phlx hooks remove yarn             # only the yarn shim (PATH line kept)
 ```
 
-`install` writes shim scripts into `~/.phalanx/bin/` for every supported
-package manager that is on `$PATH`, and prepends that directory to
-`$PATH` in the first shell rc it finds (`.zshrc`, `.zprofile`,
-`.bashrc`, `.bash_profile`, `.profile`). Shims installed:
+`hooks install` writes shim scripts into `~/.phalanx/bin/` for the
+requested package managers and prepends that directory to `$PATH` in
+the first shell rc it finds (`.zshrc`, `.zprofile`, `.bashrc`,
+`.bash_profile`, `.profile`).
 
-| Shim | Real binary | Hook binary |
-|---|---|---|
-| `~/.phalanx/bin/npm` | `npm` | `phalanx-npm-hook` |
-| `~/.phalanx/bin/yarn` | `yarn` | `phalanx-yarn-hook` |
-| `~/.phalanx/bin/pip` | `pip` | `phalanx-pip-hook` |
-| `~/.phalanx/bin/pip3` | `pip3` | `phalanx-pip-hook` |
+| Hook name | Shim path | Real binary | Hook binary |
+|---|---|---|---|
+| `npm` | `~/.phalanx/bin/npm` | `npm` | `phalanx-npm-hook` |
+| `yarn` | `~/.phalanx/bin/yarn` | `yarn` | `phalanx-yarn-hook` |
+| `pip` | `~/.phalanx/bin/pip` | `pip` | `phalanx-pip-hook` |
+| `pip3` | `~/.phalanx/bin/pip3` | `pip3` | `phalanx-pip-hook` |
 
-Package managers not present on `$PATH` at install time are skipped with
-a `⚠` and a "skipping" note. Re-run `phlx hooks install` after
-installing a new package manager.
+**Default selection** (no args): every hook from the table whose real
+binary is on `$PATH` at install time. Anything missing is skipped with
+a `⚠`.
 
-`remove` deletes the shim files and strips the PATH line from every
-shell rc that has it.
+**Explicit selection** (one or more hook names): exactly those shims
+are written, even if the real binary is not yet on `$PATH` — useful
+when you plan to install the package manager later. The hook fails
+open until the real binary appears.
+
+Unknown hook names are rejected with a usage error.
+
+`hooks remove` with no args deletes every shim and strips the PATH
+line from every shell rc that has it. With an explicit selection only
+the named shims are removed and the PATH line is left in place so the
+remaining shims keep working.
 
 ---
 

@@ -142,16 +142,35 @@ to make the analyser more precise.
 
 **When**: shipping a new version.
 
+**Full runbook**: [`docs/releases.md`](docs/releases.md) — read it before
+the first release. The summary below is for cases where you have the
+context and just need the steps.
+
 **Steps**:
-1. Update CHANGELOG if one exists. Otherwise rely on goreleaser's
+1. `go vet ./... && go build ./...` clean.
+2. `scripts/build.sh --all-platforms` — builds inside the pinned Go
+   Docker image and runs post-build sanity checks (size, static link,
+   `--version` stamping, `--help` exit code). Do not tag if any check
+   fails.
+3. Update CHANGELOG if one exists. Otherwise rely on goreleaser's
    generated changelog from commit messages (`feat:` / `fix:` prefixes
    land in the right group).
-2. `git tag vX.Y.Z && git push --tags`.
-3. The `release` GitHub workflow runs goreleaser, which builds every
+4. `git tag -a vX.Y.Z -m vX.Y.Z && git push origin vX.Y.Z`.
+5. The `release` GitHub workflow runs goreleaser, which builds every
    binary for every os/arch listed in `.goreleaser.yaml`, packages
    them, generates checksums, and creates the GitHub Release.
-4. Once published, `phlx update` will pick it up — verify by running
+6. Once published, `phlx update` will pick it up — verify by running
    `phlx update --check` against a binary on the previous tag.
 
+**Invariants**:
+- `archiveName()` in `internal/cli/update.go` and the `name_template`
+  in `.goreleaser.yaml` must produce identical filenames. Change one,
+  change both.
+- Every shipped binary (main + each hook) must appear in
+  `.goreleaser.yaml`'s `archives.ids` AND in `hookBinaries` in
+  `internal/cli/update.go`, or the self-updater will leave stale
+  binaries behind.
+
 **Don't**: hand-edit a release on GitHub. The release notes header and
-install snippet live in `.goreleaser.yaml`.
+install snippet live in `.goreleaser.yaml`. For genuine emergencies see
+the "Manual binary upload" section of `docs/releases.md`.

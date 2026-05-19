@@ -52,19 +52,28 @@ phlx/
 ## Build / run / verify
 
 ```bash
-# Build all three binaries
-go build -o bin/phalanx          ./cmd/phalanx
-go build -o bin/phalanx-npm-hook ./cmd/phalanx-npm-hook
-go build -o bin/phalanx-pip-hook ./cmd/phalanx-pip-hook
+# Fast iteration — build all four binaries on the host
+go build -o bin/phalanx           ./cmd/phalanx
+go build -o bin/phalanx-npm-hook  ./cmd/phalanx-npm-hook
+go build -o bin/phalanx-pip-hook  ./cmd/phalanx-pip-hook
 go build -o bin/phalanx-yarn-hook ./cmd/phalanx-yarn-hook
 
 # Sanity checks an agent should run before declaring success
 go vet ./...
 go build ./...
+
+# Reproducible build inside a pinned Go Docker image, with
+# post-build sanity checks (size, static link, --version, --help).
+# Use this before tagging a release.
+scripts/build.sh                  # host platform
+scripts/build.sh --all-platforms  # the full release matrix
 ```
 
 There is no unit test suite yet. When adding new packages, add a `_test.go`
 file alongside the code; do not introduce a separate `tests/` tree.
+
+Release process is documented separately in
+[`docs/releases.md`](docs/releases.md).
 
 ---
 

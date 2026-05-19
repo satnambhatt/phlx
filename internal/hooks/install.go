@@ -1,4 +1,4 @@
-// Package hooks installs/removes the npm + pip shim scripts and PATH entry.
+// Package hooks installs/removes the npm + pip + yarn shim scripts and PATH entry.
 package hooks
 
 import (
@@ -14,6 +14,32 @@ import (
 const pathLine = "\n# phalanx — package security hooks\nexport PATH=\"$HOME/.phalanx/bin:$PATH\"\n"
 
 var shellFiles = []string{".zshrc", ".zprofile", ".bashrc", ".bash_profile", ".profile"}
+
+// Spec describes a single shim Phalanx can install.
+type Spec struct {
+	Name     string // shim filename under ~/.phalanx/bin/
+	RealName string // command name to look up on PATH
+	Binary   string // phalanx-*-hook binary the shim execs
+}
+
+// AvailableHooks is the closed set of shims `phlx hooks install` understands.
+// Order matters — used for both ValidArgs in the CLI and default install order.
+var AvailableHooks = []Spec{
+	{Name: "npm", RealName: "npm", Binary: "phalanx-npm-hook"},
+	{Name: "yarn", RealName: "yarn", Binary: "phalanx-yarn-hook"},
+	{Name: "pip", RealName: "pip", Binary: "phalanx-pip-hook"},
+	{Name: "pip3", RealName: "pip3", Binary: "phalanx-pip-hook"},
+}
+
+// AvailableHookNames returns the shim names as a flat slice — handy for
+// cobra ValidArgs and user-facing error messages.
+func AvailableHookNames() []string {
+	out := make([]string, len(AvailableHooks))
+	for i, h := range AvailableHooks {
+		out[i] = h.Name
+	}
+	return out
+}
 
 func phalanxBin() string {
 	home, _ := os.UserHomeDir()
@@ -55,63 +81,75 @@ func writeShim(name, hookBinary string) (string, error) {
 	return shim, nil
 }
 
-func Install() error {
+// selectSpecs resolves the requested hook names against AvailableHooks.
+// Empty selection means "everything". Unknown names are reported in err.
+func selectSpecs(names []string) ([]Spec, error) {
+	if len(names) == 0 {
+		out := make([]Spec, len(AvailableHooks))
+		copy(out, AvailableHooks)
+		return out, nil
+	}
+	byName := make(map[string]Spec, len(AvailableHooks))
+	for _, h := range AvailableHooks {
+		byName[h.Name] = h
+	}
+	var out []Spec
+	var unknown []string
+	for _, n := range names {
+		spec, ok := byName[n]
+		if !ok {
+			unknown = append(unknown, n)
+			continue
+		}
+		out = append(out, spec)
+	}
+	if len(unknown) > 0 {
+		return nil, fmt.Errorf("unknown hook(s): %s — valid: %s",
+			strings.Join(unknown, ", "), strings.Join(AvailableHookNames(), ", "))
+	}
+	return out, nil
+}
+
+// Install writes shims for the requested hooks. If selected is empty, every
+// hook whose real binary is on PATH is installed. When the user explicitly
+// names a hook, the shim is written even if the real binary is missing —
+// the user is opting in for a manager they plan to install later.
+func Install(selected ...string) error {
 	color.New(color.FgCyan, color.Bold).Println("\n  Installing phalanx hooks...")
 	fmt.Println()
+
+	specs, err := selectSpecs(selected)
+	if err != nil {
+		return err
+	}
+	explicit := len(selected) > 0
 
 	exeDir, _ := os.Executable()
 	exeDir = filepath.Dir(exeDir)
 
-	npmHook := filepath.Join(exeDir, "phalanx-npm-hook")
-	pipHook := filepath.Join(exeDir, "phalanx-pip-hook")
-	yarnHook := filepath.Join(exeDir, "phalanx-yarn-hook")
-
-	// npm
-	if real := findReal("npm"); real != "" {
-		shim, err := writeShim("npm", npmHook)
+	wrote := 0
+	for _, spec := range specs {
+		hookBinary := filepath.Join(exeDir, spec.Binary)
+		real := findReal(spec.RealName)
+		if real == "" && !explicit {
+			fmt.Printf("  %s %s not found — skipping\n", color.YellowString("⚠"), spec.RealName)
+			continue
+		}
+		shim, err := writeShim(spec.Name, hookBinary)
 		if err != nil {
 			return err
 		}
-		fmt.Printf("  %s npm shim → %s\n", color.GreenString("✓"), color.New(color.Faint).Sprint(shim))
-		fmt.Printf("    %s\n", color.New(color.Faint).Sprintf("real npm: %s", real))
-	} else {
-		fmt.Printf("  %s npm not found — skipping\n", color.YellowString("⚠"))
+		fmt.Printf("  %s %s shim → %s\n", color.GreenString("✓"), spec.Name, color.New(color.Faint).Sprint(shim))
+		if real == "" {
+			fmt.Printf("    %s\n", color.New(color.Faint).Sprintf("real %s: not on PATH — shim will fail open until installed", spec.RealName))
+		} else {
+			fmt.Printf("    %s\n", color.New(color.Faint).Sprintf("real %s: %s", spec.RealName, real))
+		}
+		wrote++
 	}
 
-	// yarn
-	if real := findReal("yarn"); real != "" {
-		shim, err := writeShim("yarn", yarnHook)
-		if err != nil {
-			return err
-		}
-		fmt.Printf("  %s yarn shim → %s\n", color.GreenString("✓"), color.New(color.Faint).Sprint(shim))
-		fmt.Printf("    %s\n", color.New(color.Faint).Sprintf("real yarn: %s", real))
-	} else {
-		fmt.Printf("  %s yarn not found — skipping\n", color.YellowString("⚠"))
-	}
-
-	// pip / pip3 — install shims for whichever is present.
-	pipReal := findReal("pip")
-	pip3Real := findReal("pip3")
-	if pipReal == "" && pip3Real == "" {
-		fmt.Printf("  %s pip/pip3 not found — skipping\n", color.YellowString("⚠"))
-	} else {
-		if pipReal != "" {
-			shim, err := writeShim("pip", pipHook)
-			if err != nil {
-				return err
-			}
-			fmt.Printf("  %s pip shim → %s\n", color.GreenString("✓"), color.New(color.Faint).Sprint(shim))
-			fmt.Printf("    %s\n", color.New(color.Faint).Sprintf("real pip: %s", pipReal))
-		}
-		if pip3Real != "" {
-			shim, err := writeShim("pip3", pipHook)
-			if err != nil {
-				return err
-			}
-			fmt.Printf("  %s pip3 shim → %s\n", color.GreenString("✓"), color.New(color.Faint).Sprint(shim))
-			fmt.Printf("    %s\n", color.New(color.Faint).Sprintf("real pip3: %s", pip3Real))
-		}
+	if wrote == 0 {
+		fmt.Printf("  %s no hooks installed\n", color.YellowString("⚠"))
 	}
 
 	// Append PATH entry to first existing shell rc
@@ -162,15 +200,27 @@ func tildeify(p, home string) string {
 	return p
 }
 
-func Remove() error {
+// Remove deletes the requested shims. Empty selection removes every shim
+// Phalanx knows about and strips the PATH line. With an explicit selection
+// the PATH line stays — there are still other shims that need it.
+func Remove(selected ...string) error {
 	color.New(color.FgCyan, color.Bold).Println("\n  Removing phalanx hooks...")
+	specs, err := selectSpecs(selected)
+	if err != nil {
+		return err
+	}
 	pb := phalanxBin()
-	for _, c := range []string{"npm", "yarn", "pip", "pip3"} {
-		p := filepath.Join(pb, c)
+	for _, spec := range specs {
+		p := filepath.Join(pb, spec.Name)
 		if _, err := os.Stat(p); err == nil {
 			os.Remove(p)
-			fmt.Printf("  %s removed %s shim\n", color.GreenString("✓"), c)
+			fmt.Printf("  %s removed %s shim\n", color.GreenString("✓"), spec.Name)
 		}
+	}
+	if len(selected) > 0 {
+		fmt.Println(color.New(color.Faint).Sprint("\n  PATH line left in place — other shims may still be active."))
+		fmt.Println()
+		return nil
 	}
 	home, _ := os.UserHomeDir()
 	for _, name := range shellFiles {

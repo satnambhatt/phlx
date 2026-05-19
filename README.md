@@ -182,7 +182,7 @@ Both `phalanx` and `phlx` work — they are the same binary.
 | `phlx history -n 20` | Recent install events |
 | `phlx watch [path]` | Register a project (see [docs/upgrades](docs/upgrades/README.md)) |
 | `phlx allow <pkg>@<v> -r "<reason>"` | Bypass the gate |
-| `phlx hooks install` / `phlx hooks remove` | Manage shell shims |
+| `phlx hooks install [hook...]` / `phlx hooks remove [hook...]` | Manage shell shims (`npm`, `yarn`, `pip`, `pip3`); no args = all |
 | `phlx config [key] [value]` | Read or write configuration |
 | `phlx update` | Pull and install the latest released version |
 | `phlx --version` | Print the build-stamped version |
