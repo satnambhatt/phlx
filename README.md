@@ -201,23 +201,6 @@ All state lives in `~/.phalanx/phalanx.db`. No background process required.
 
 ---
 
-## Using with AI coding tools
-
-Phalanx hooks the package manager, not the editor — so Claude Code, Cursor,
-Aider, Continue, Copilot Workspace, and any other agent that shells out to
-`npm` / `yarn` / `pip` is gated automatically once `phlx hooks install` is
-done.
-
-For per-tool setup notes (Claude Code session hooks, Cursor rules, devcontainer
-snippets) see **[docs/ai-coding-tools.md](docs/ai-coding-tools.md)**.
-
-Repo-level briefings for AI assistants live in the standard locations:
-
-- **[AGENTS.md](AGENTS.md)** — invariants, layout, what not to do
-- **[SKILLS.md](SKILLS.md)** — task-shaped recipes (add a command, add an ecosystem, cut a release)
-
----
-
 ## The 5-stage scan pipeline
 
 | Stage | What | Network |
