@@ -2,6 +2,9 @@
 
 [![GitHub stars](https://img.shields.io/github/stars/satnambhatt/phlx?style=social)](https://github.com/satnambhatt/phlx)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
+[![Docs](https://img.shields.io/badge/docs-satnambhatt.github.io%2Fphlx-blue)](https://satnambhatt.github.io/phlx/)
+
+**Project site: [satnambhatt.github.io/phlx](https://satnambhatt.github.io/phlx/)** — visual walkthrough of how Phalanx works, the shim architecture, and the 5-stage scan pipeline.
 
 > *The ancient Greek formation where shields interlock. Nothing gets through.*
 > *To Note: The code is written using the help of Claude Code.* 

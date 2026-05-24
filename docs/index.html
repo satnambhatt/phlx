@@ -210,7 +210,7 @@ body { background:var(--white); color:var(--text); font-family:'DM Sans',sans-se
     <div class="wordmark-rule"></div>
     <div class="wordmark-sub">Package Security That Holds The Line</div>
   </div>
-  <div class="mh-right">npm · pip · PyPI<br>macOS · Linux · WSL<br>arm64 · amd64</div>
+  <div class="mh-right">npm · yarn · pip · PyPI<br>macOS · Linux · WSL · Windows<br>arm64 · amd64</div>
 </div>
 
 <div class="hero">
@@ -228,9 +228,9 @@ body { background:var(--white); color:var(--text); font-family:'DM Sans',sans-se
       <cite>Zero config · Zero cloud · Zero behaviour change</cite>
     </div>
     <div class="badge-row">
-      <span class="badge solid">npm</span><span class="badge solid">pip</span>
+      <span class="badge solid">npm</span><span class="badge solid">yarn</span><span class="badge solid">pip</span>
       <span class="badge green">Trivy scanner</span><span class="badge green">Behavioural rules</span>
-      <span class="badge blue">SQLite cache</span><span class="badge">0 MB idle</span>
+      <span class="badge blue">SQLite cache</span><span class="badge blue">phlx update</span><span class="badge">0 MB idle</span>
     </div>
   </div>
 </div>
@@ -241,18 +241,18 @@ body { background:var(--white); color:var(--text); font-family:'DM Sans',sans-se
   <div class="sec-hdr"><div class="sec-num">01</div><h2 class="sec-title">How It <span>Works</span></h2><div class="sec-rule"></div></div>
   <div class="two-col">
     <div>
-      <p style="color:var(--text2);margin-bottom:24px;line-height:1.8">Phalanx installs shim scripts at <code style="font-family:'DM Mono',monospace;font-size:12px;background:var(--bg2);border:1px solid var(--border);padding:1px 5px">~/.phalanx/bin/{npm,pip,pip3}</code> and prepends that directory to your <code style="font-family:'DM Mono',monospace;font-size:12px;background:var(--bg2);border:1px solid var(--border);padding:1px 5px">$PATH</code>. Each shim invokes a small Go binary that scans, then either blocks or execs the real package manager.</p>
+      <p style="color:var(--text2);margin-bottom:24px;line-height:1.8">Phalanx installs shim scripts at <code style="font-family:'DM Mono',monospace;font-size:12px;background:var(--bg2);border:1px solid var(--border);padding:1px 5px">~/.phalanx/bin/{npm,yarn,pip,pip3}</code> and prepends that directory to your <code style="font-family:'DM Mono',monospace;font-size:12px;background:var(--bg2);border:1px solid var(--border);padding:1px 5px">$PATH</code>. Each shim invokes a small Go binary that scans, then either blocks or execs the real package manager.</p>
       <div class="steps">
-        <div class="step"><div class="step-num">1</div><div class="step-content"><div class="step-title">Shell finds the shim</div><div class="step-body">You type <code>npm install lodash</code>. Your shell searches <code>$PATH</code> left to right and finds <code>~/.phalanx/bin/npm</code> before the real npm. Phalanx intercepts.</div></div></div>
-        <div class="step"><div class="step-num">2</div><div class="step-content"><div class="step-title">Typosquat check + version resolve</div><div class="step-body">Stage 1 runs known-squat list, Levenshtein, homoglyph and separator-confusion analysers — a CRITICAL hit blocks before any download. Otherwise <code>phalanx-npm-hook</code> queries the npm or PyPI registry to pin <code>^4</code> → <code>4.17.21</code>.</div></div></div>
+        <div class="step"><div class="step-num">1</div><div class="step-content"><div class="step-title">Shell finds the shim</div><div class="step-body">You type <code>npm install lodash</code>, <code>yarn add lodash</code>, or <code>pip install requests</code>. Your shell searches <code>$PATH</code> left to right and hits <code>~/.phalanx/bin/{npm,yarn,pip}</code> before the real binary. Phalanx intercepts.</div></div></div>
+        <div class="step"><div class="step-num">2</div><div class="step-content"><div class="step-title">Typosquat check + version resolve</div><div class="step-body">Stage 1 runs known-squat list, Levenshtein, homoglyph and separator-confusion analysers — a CRITICAL hit blocks before any download. Otherwise <code>phalanx-{npm,yarn,pip}-hook</code> queries the npm or PyPI registry to pin <code>^4</code> → <code>4.17.21</code>.</div></div></div>
         <div class="step"><div class="step-num">3</div><div class="step-content"><div class="step-title">Trivy + behavioural in parallel</div><div class="step-body">Tarball downloaded into a temp workspace. Stage 3 (Trivy CVE + licence scan) and Stage 4 (14 behavioural static-analysis rules on extracted tarball) run as goroutines. Results cached 24h in SQLite.</div></div></div>
         <div class="step"><div class="step-num">4</div><div class="step-content"><div class="step-title">Policy gate decides</div><div class="step-body">Inline policy evaluates findings. CRITICAL CVEs and unfixed HIGH CVEs block. Fixable issues warn. GPL / AGPL licences block. Optional: externalise to OPA / Rego (see <code>docs/upgrades</code>).</div></div></div>
-        <div class="step"><div class="step-num">5</div><div class="step-content"><div class="step-title">Real package manager runs or doesn't</div><div class="step-body">If blocked: <code>exit 1</code>, nothing installs. If clean: Phalanx execs the real npm/pip binary with all original arguments unchanged.</div></div></div>
+        <div class="step"><div class="step-num">5</div><div class="step-content"><div class="step-title">Real package manager runs or doesn't</div><div class="step-body">If blocked: <code>exit 1</code>, nothing installs. If clean: Phalanx execs the real npm / yarn / pip binary with all original arguments unchanged.</div></div></div>
       </div>
     </div>
     <div>
       <div class="terminal">
-        <div class="terminal-titlebar"><div class="tb-dot r"></div><div class="tb-dot y"></div><div class="tb-dot g"></div><span class="tb-label">~/myproject — npm install</span></div>
+        <div class="terminal-titlebar"><div class="tb-dot r"></div><div class="tb-dot y"></div><div class="tb-dot g"></div><span class="tb-label">~/myproject — npm / yarn / pip install</span></div>
         <div class="terminal-body">
           <span class="type-line t-line-1"><span class="t-prompt">$ </span><span class="t-cmd">npm install lodash express bad-lib</span></span>
           <span class="type-line t-line-2"><span class="t-dim">  phalanx  scanning 3 packages...</span></span><br>
@@ -296,10 +296,10 @@ body { background:var(--white); color:var(--text); font-family:'DM Sans',sans-se
       <p style="color:var(--text2);line-height:1.8;margin-bottom:24px">The shim pattern requires no root access, no kernel modules, no system modifications. It's portable, reversible, and transparent.</p>
       <div class="arch-grid">
         <div class="arch-cell dark" style="grid-column:1/-1"><div class="arch-label">Shell environment — $PATH resolution order</div><div class="arch-name">~/.phalanx/bin : /usr/local/bin : /usr/bin</div><div class="arch-detail">Shell searches left to right · Phalanx bin is always first</div></div>
-        <div class="arch-cell gray-bg"><div class="arch-label">Position 1 — intercepted</div><div class="arch-name">~/.phalanx/bin/npm</div><div class="arch-detail">2-line bash shim<br>execs phalanx-npm-hook</div><div class="arch-badge" style="color:var(--red)">INTERCEPTS</div></div>
+        <div class="arch-cell gray-bg"><div class="arch-label">Position 1 — intercepted</div><div class="arch-name">~/.phalanx/bin/{npm,yarn,pip,pip3}</div><div class="arch-detail">2-line bash shims<br>exec the matching hook binary</div><div class="arch-badge" style="color:var(--red)">INTERCEPTS</div></div>
         <div class="arch-cell arrow">→</div>
-        <div class="arch-cell gray-bg"><div class="arch-label">Phalanx evaluates</div><div class="arch-name">phalanx-npm-hook (Go)</div><div class="arch-detail">Typosquat · Freshness<br>Trivy · Behavioural · Policy</div><div class="arch-badge" style="color:var(--amber)">EVALUATES</div></div>
-        <div class="arch-cell green-bg" style="grid-column:1/-1"><div class="arch-label">If policy passes</div><div class="arch-name">syscall.Exec("/usr/local/bin/npm", originalArgs)</div><div class="arch-detail">Real npm runs with original arguments · developer sees normal output</div></div>
+        <div class="arch-cell gray-bg"><div class="arch-label">Phalanx evaluates</div><div class="arch-name">phalanx-{npm,yarn,pip}-hook (Go)</div><div class="arch-detail">Typosquat · Freshness<br>Trivy · Behavioural · Policy</div><div class="arch-badge" style="color:var(--amber)">EVALUATES</div></div>
+        <div class="arch-cell green-bg" style="grid-column:1/-1"><div class="arch-label">If policy passes</div><div class="arch-name">syscall.Exec("/usr/local/bin/{npm,yarn,pip}", originalArgs)</div><div class="arch-detail">Real package manager runs with original arguments · developer sees normal output</div></div>
         <div class="arch-cell red-bg" style="grid-column:1/-1"><div class="arch-label">If policy blocks</div><div class="arch-name">os.Exit(1)</div><div class="arch-detail">Real npm never called · nothing installed · CVE details printed to stderr</div></div>
       </div>
       <div class="callout green"><div class="callout-tag">Fully reversible</div><div class="callout-body"><code>phalanx hooks remove</code> deletes shim scripts and removes the PATH entry. Your system is identical to before installation.</div></div>
@@ -309,20 +309,23 @@ body { background:var(--white); color:var(--text); font-family:'DM Sans',sans-se
       <div class="terminal" style="margin-bottom:20px">
         <div class="terminal-titlebar"><div class="tb-dot r"></div><div class="tb-dot y"></div><div class="tb-dot g"></div><span class="tb-label">~/.phalanx/</span></div>
         <div class="terminal-body" style="font-size:12px;line-height:2">
-          <span style="color:var(--term-dim)"># The npm shim</span><br>
-          <span style="color:var(--term-white)">~/.phalanx/bin/npm</span><br>
+          <span style="color:var(--term-dim)"># Shims — one per package manager</span><br>
+          <span style="color:var(--term-white)">~/.phalanx/bin/{npm,yarn,pip,pip3}</span><br>
           <span style="color:var(--term-dim)">  #!/usr/bin/env bash</span><br>
-          <span style="color:var(--term-dim)">  exec phalanx-npm-hook "$@"</span><br><br>
+          <span style="color:var(--term-dim)">  exec phalanx-{npm,yarn,pip}-hook "$@"</span><br><br>
           <span style="color:var(--term-dim)"># Shell config addition</span><br>
           <span style="color:var(--term-green)">export PATH="$HOME/.phalanx/bin:$PATH"</span><br><br>
           <span style="color:var(--term-dim)"># SQLite — scan cache + audit log</span><br>
           <span style="color:var(--term-white)">~/.phalanx/phalanx.db</span><br>
           <span style="color:var(--term-dim)">  pure-Go modernc.org/sqlite</span><br><br>
+          <span style="color:var(--term-dim)"># Self-update — pull latest release</span><br>
+          <span style="color:var(--term-green)">$ phlx update</span><br>
+          <span style="color:var(--term-dim)">  checks GitHub, replaces binaries in place</span><br><br>
           <span style="color:var(--term-dim)"># Optional — externalised OPA policy</span><br>
           <span style="color:var(--term-white)">docs/upgrades/opa-policy.md</span>
         </div>
       </div>
-      <div class="callout blue"><div class="callout-tag">Optional daemon</div><div class="callout-title">Watch project manifests</div><div class="callout-body">No background process required. Optional daemon watches <code>package.json</code>, <code>requirements.txt</code>, <code>Pipfile</code>, <code>pyproject.toml</code> and re-scans on change — see <code>docs/upgrades</code>.</div></div>
+      <div class="callout blue"><div class="callout-tag">Optional daemon</div><div class="callout-title">Watch project manifests</div><div class="callout-body">No background process required. Optional daemon watches <code>package.json</code>, <code>yarn.lock</code>, <code>requirements.txt</code>, <code>Pipfile</code>, <code>pyproject.toml</code> and re-scans on change — see <code>docs/upgrades</code>.</div></div>
     </div>
   </div>
 </div>
@@ -335,7 +338,7 @@ body { background:var(--white); color:var(--text); font-family:'DM Sans',sans-se
     <div class="why-card"><span class="why-icon">👻</span><div class="why-title">Invisible to developers</div><div class="why-body">Clean installs show nothing. No dashboard to check, no PR comment to read, no CI job to wait for. Developers run the same commands they always have.</div></div>
     <div class="why-card"><span class="why-icon">🔒</span><div class="why-title">No account, no cloud</div><div class="why-body">Runs entirely on your machine. Scan results stay in <code>~/.phalanx/</code>. No telemetry, no login, no API key. The CVE database is Trivy's local cache.</div></div>
     <div class="why-card"><span class="why-icon">🎛</span><div class="why-title">Policy you own</div><div class="why-body">Defaults block CRITICAL CVEs, unfixed HIGH CVEs, known typosquats, GPL / AGPL. <code>phlx allow</code> grants per-package exceptions. Optional upgrade to OPA / Rego for full custom rules.</div></div>
-    <div class="why-card"><span class="why-icon">🐍</span><div class="why-title">npm and pip, one tool</div><div class="why-body">Phalanx covers both ecosystems with the same policy, the same audit log, the same CLI. One install, two package managers protected.</div></div>
+    <div class="why-card"><span class="why-icon">🐍</span><div class="why-title">npm, yarn, and pip — one tool</div><div class="why-body">Phalanx covers all three with the same policy, the same audit log, the same CLI. One install, three package managers protected. <code>phlx update</code> keeps every binary current.</div></div>
     <div class="why-card"><span class="why-icon">🍃</span><div class="why-title">Zero idle, single static binary</div><div class="why-body">Hooks-only mode: 0 MB until an install triggers a scan (~150 MB peak). Written in Go — single static binary, pure-Go SQLite, no runtime needed.</div></div>
   </div>
 </div>
@@ -349,7 +352,7 @@ body { background:var(--white); color:var(--text); font-family:'DM Sans',sans-se
       <tbody>
         <tr><td>Blocks install in real time</td><td class="phalanx"><span class="tick">✓</span> Before install</td><td><span class="cross">✗</span> Post-install</td><td><span class="cross">✗</span> Post-install</td><td><span class="part">◑</span> GitHub PR only</td><td><span class="cross">✗</span> PR suggestion</td></tr>
         <tr><td>Works on local machine</td><td class="phalanx"><span class="tick">✓</span> Fully local</td><td><span class="tick">✓</span></td><td><span class="tick">✓</span></td><td><span class="cross">✗</span> GitHub only</td><td><span class="cross">✗</span> GitHub only</td></tr>
-        <tr><td>Covers pip / Python</td><td class="phalanx"><span class="tick">✓</span> npm + pip</td><td><span class="cross">✗</span> npm only</td><td><span class="tick">✓</span> Many</td><td><span class="part">◑</span> npm only</td><td><span class="tick">✓</span> Many</td></tr>
+        <tr><td>Covers npm / yarn / pip</td><td class="phalanx"><span class="tick">✓</span> npm + yarn + pip</td><td><span class="cross">✗</span> npm only</td><td><span class="tick">✓</span> Many</td><td><span class="part">◑</span> npm only</td><td><span class="tick">✓</span> Many</td></tr>
         <tr><td>No account or cloud required</td><td class="phalanx"><span class="tick">✓</span> Fully offline</td><td><span class="tick">✓</span></td><td><span class="cross">✗</span> Account required</td><td><span class="cross">✗</span> Account required</td><td><span class="cross">✗</span> GitHub account</td></tr>
         <tr><td>No data leaves your machine</td><td class="phalanx"><span class="tick">✓</span> No telemetry</td><td><span class="tick">✓</span></td><td><span class="cross">✗</span> Sends metadata</td><td><span class="cross">✗</span> Cloud analysis</td><td><span class="cross">✗</span> GitHub platform</td></tr>
         <tr><td>Customisable security policy</td><td class="phalanx"><span class="tick">✓</span> Inline · OPA optional</td><td><span class="cross">✗</span></td><td><span class="part">◑</span> Paid</td><td><span class="part">◑</span> Paid</td><td><span class="part">◑</span> Limited</td></tr>
@@ -392,8 +395,8 @@ body { background:var(--white); color:var(--text); font-family:'DM Sans',sans-se
         <div class="qs-step"><div class="qs-num">1</div><div><div class="qs-title">Install Trivy</div><div class="qs-body"><code>brew install trivy</code> on macOS · <code>apt install trivy</code> on Debian/Ubuntu. Optional — Phalanx fails open without it. Docker also works as fallback.</div></div></div>
         <div class="qs-step"><div class="qs-num">2</div><div><div class="qs-title">Pin the version</div><div class="qs-body">Grab the latest tag from <a href="https://github.com/satnambhatt/phlx/releases" style="color:var(--blue)">releases</a> — e.g. <code>VERSION=0.1.0</code>. Or auto-detect via the GitHub API (see terminal).</div></div></div>
         <div class="qs-step"><div class="qs-num">3</div><div><div class="qs-title">curl · extract · move</div><div class="qs-body">Single pipe downloads the archive and extracts three binaries into the working directory. Move them to <code>/usr/local/bin</code> — all three must live in the same directory.</div></div></div>
-        <div class="qs-step"><div class="qs-num">4</div><div><div class="qs-title">Arm the hooks</div><div class="qs-body"><code>phalanx hooks install</code> then <code>source ~/.zshrc</code>. Verify with <code>which npm</code> — should resolve to <code>~/.phalanx/bin/npm</code>.</div></div></div>
-        <div class="qs-step"><div class="qs-num">5</div><div><div class="qs-title">Try it</div><div class="qs-body">Run <code>npm install lodash</code>. First run downloads Trivy's CVE database. Every subsequent scan is near-instant from the 24h SQLite cache.</div></div></div>
+        <div class="qs-step"><div class="qs-num">4</div><div><div class="qs-title">Arm the hooks</div><div class="qs-body"><code>phalanx hooks install</code> installs shims for <code>npm</code>, <code>yarn</code>, <code>pip</code>, <code>pip3</code>. Then <code>source ~/.zshrc</code>. Verify with <code>which yarn</code> — should resolve to <code>~/.phalanx/bin/yarn</code>.</div></div></div>
+        <div class="qs-step"><div class="qs-num">5</div><div><div class="qs-title">Try it · keep it current</div><div class="qs-body">Run <code>npm install lodash</code> or <code>yarn add lodash</code>. First run downloads Trivy's CVE database; every subsequent scan is near-instant from the 24h SQLite cache. Run <code>phlx update</code> any time to pull the latest release.</div></div></div>
       </div>
     </div>
     <div>
@@ -411,10 +414,13 @@ body { background:var(--white); color:var(--text); font-family:'DM Sans',sans-se
           <span style="color:var(--term-white)">    releases/download/v${VERSION}/\</span><br>
           <span style="color:var(--term-white)">    phlx_${VERSION}_macos_arm64.tar.gz | tar -xz</span><br>
           <span style="color:var(--term-green)">$</span><span style="color:var(--term-white)"> sudo mv phalanx phalanx-*-hook /usr/local/bin/</span><br><br>
-          <span style="color:var(--term-dim)"># 4 — arm the shell hooks</span><br>
+          <span style="color:var(--term-dim)"># 4 — arm the shell hooks (npm · yarn · pip · pip3)</span><br>
           <span style="color:var(--term-green)">$</span><span style="color:var(--term-white)"> phalanx hooks install</span><br>
           <span style="color:var(--term-green)">$</span><span style="color:var(--term-white)"> source ~/.zshrc</span><br>
-          <span style="color:var(--term-dim)">  [phalanx] holding the line</span>
+          <span style="color:var(--term-dim)">  [phalanx] holding the line</span><br><br>
+          <span style="color:var(--term-dim)"># 5 — stay current</span><br>
+          <span style="color:var(--term-green)">$</span><span style="color:var(--term-white)"> phlx update --check</span><br>
+          <span style="color:var(--term-green)">$</span><span style="color:var(--term-white)"> phlx update</span>
         </div>
       </div>
     </div>
