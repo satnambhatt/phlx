@@ -52,12 +52,28 @@ builds:
       - goos: windows
         goarch: arm64
 
+  - id: phalanx-yarn-hook
+    main: ./cmd/phalanx-yarn-hook
+    binary: phalanx-yarn-hook
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w
+    goos: [linux, darwin, windows]
+    goarch: [amd64, arm64]
+    ignore:
+      - goos: windows
+        goarch: arm64
+
 archives:
   - id: phlx
     ids:
       - phalanx
       - phalanx-npm-hook
       - phalanx-pip-hook
+      - phalanx-yarn-hook
     name_template: >-
       phlx_{{ .Version }}_
       {{- if eq .Os "darwin" }}macos
@@ -120,7 +136,7 @@ release:
     ```bash
     # macOS arm64 example
     curl -sSL https://github.com/satnambhatt/phlx/releases/download/{{ .Tag }}/phlx_{{ .Version }}_macos_arm64.tar.gz | tar -xz
-    sudo mv phalanx phalanx-npm-hook phalanx-pip-hook /usr/local/bin/
+    sudo mv phalanx phalanx-npm-hook phalanx-pip-hook phalanx-yarn-hook /usr/local/bin/
     phalanx hooks install
     source ~/.zshrc
     ```

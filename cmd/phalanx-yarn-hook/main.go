@@ -1,5 +1,5 @@
-// phalanx-npm-hook: invoked by the npm shim. Configures hookcore for npm
-// and hands off; ecosystem-neutral logic lives in internal/hookcore.
+// phalanx-yarn-hook: invoked by the yarn shim. Configures hookcore for
+// yarn (npm registry, yarn-shaped subcommands) and hands off.
 package main
 
 import (
@@ -12,18 +12,17 @@ import (
 func main() {
 	hookcore.Run(hookcore.Config{
 		Ecosystem:    "npm",
-		BannerSuffix: "scanning before install",
+		BannerSuffix: "scanning yarn packages",
 		VersionSep:   "@",
-		RealNames:    []string{"npm"},
-		DefaultReal:  "/usr/local/bin/npm",
+		RealNames:    []string{"yarn"},
+		DefaultReal:  "/usr/local/bin/yarn",
 		Resolve:      registry.ResolveNpmVersion,
 		Parser: hookcore.Parser{
 			InstallSubcommands: map[string]bool{
-				"install": true, "i": true, "add": true,
-				"update": true, "up": true,
+				"add": true, "upgrade": true, "up": true,
 			},
 			Regex:        regexp.MustCompile(`^(@?[^@]+)(?:@(.+))?$`),
-			SkipPrefixes: []string{".", "/", "file:", "git"},
+			SkipPrefixes: []string{".", "/", "file:", "git", "link:", "workspace:"},
 		},
 	})
 }

@@ -16,15 +16,30 @@ import (
 	"github.com/satnambhatt/phlx/internal/scanner"
 )
 
-func Root() *cobra.Command {
+// Root builds the cobra command tree. The version string is wired in by
+// the binary entrypoint so goreleaser's -X main.version flows through to
+// `phlx --version` and the self-updater.
+func Root(version string) *cobra.Command {
+	if version == "" {
+		version = "dev"
+	}
 	root := &cobra.Command{
 		Use:           "phalanx",
 		Short:         "phalanx — package security that holds the line",
-		Version:       "1.0.0",
+		Version:       version,
 		SilenceUsage:  true,
 		SilenceErrors: false,
 	}
-	root.AddCommand(statusCmd(), scanCmd(), historyCmd(), watchCmd(), allowCmd(), hooksCmd(), configCmd())
+	root.AddCommand(
+		statusCmd(),
+		scanCmd(),
+		historyCmd(),
+		watchCmd(),
+		allowCmd(),
+		hooksCmd(),
+		configCmd(),
+		updateCmd(version),
+	)
 	return root
 }
 
@@ -272,19 +287,36 @@ func allowCmd() *cobra.Command {
 }
 
 func hooksCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "hooks",
+		Short: "Install or remove npm/yarn/pip hooks",
+	}
+	cmd.AddCommand(hooksInstallCmd(), hooksRemoveCmd())
+	return cmd
+}
+
+func hooksInstallCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:       "hooks <install|remove>",
-		Short:     "Install or remove npm/pip hooks",
-		ValidArgs: []string{"install", "remove"},
-		Args:      cobra.ExactValidArgs(1),
+		Use:       "install [hook...]",
+		Short:     "Install shell hooks (default: every available hook)",
+		Long:      "Install shell hooks for the package managers Phalanx knows about. Pass one or more of " + strings.Join(hooks.AvailableHookNames(), ", ") + " to install only those; pass none to install every hook whose real binary is on PATH.",
+		ValidArgs: hooks.AvailableHookNames(),
+		Args:      cobra.OnlyValidArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			switch args[0] {
-			case "install":
-				return hooks.Install()
-			case "remove":
-				return hooks.Remove()
-			}
-			return nil
+			return hooks.Install(args...)
+		},
+	}
+}
+
+func hooksRemoveCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:       "remove [hook...]",
+		Short:     "Remove shell hooks (default: every hook + PATH line)",
+		Long:      "Remove specific shims, or pass no args to remove every shim and strip the PATH line from the shell rc.",
+		ValidArgs: hooks.AvailableHookNames(),
+		Args:      cobra.OnlyValidArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return hooks.Remove(args...)
 		},
 	}
 }
